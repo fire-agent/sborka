@@ -125,6 +125,17 @@
                 <button type="button" id="cfgSaveBtn" class="save-btn">Сохранить настройки</button>
                 <span id="cfgSaveStatus"></span>
             </div>
+
+            <hr>
+
+            <h2>Безопасность / Смена пароля администратора</h2>
+            <div class="settings-group">
+                <label>Текущий пароль <input type="password" id="currentPassword" autocomplete="current-password"></label>
+                <label>Новый пароль <input type="password" id="newPassword" autocomplete="new-password"></label>
+                <label>Повтор нового пароля <input type="password" id="confirmPassword" autocomplete="new-password"></label>
+            </div>
+            <button type="button" id="changePasswordBtn" class="save-btn">Сменить пароль</button>
+            <span id="passwordStatus"></span>
         </section>
 
         <section id="tabNotifications" class="tab-content" hidden>
@@ -182,16 +193,6 @@
             <button type="button" id="saveNotifBtn" class="save-btn">Сохранить настройки уведомлений</button>
             <span id="saveNotifStatus"></span>
 
-            <hr>
-
-            <h2>Смена пароля</h2>
-            <div class="settings-group">
-                <label>Текущий пароль <input type="password" id="currentPassword" autocomplete="current-password"></label>
-                <label>Новый пароль <input type="password" id="newPassword" autocomplete="new-password"></label>
-                <label>Повтор нового пароля <input type="password" id="confirmPassword" autocomplete="new-password"></label>
-            </div>
-            <button type="button" id="changePasswordBtn" class="save-btn">Сменить пароль</button>
-            <span id="passwordStatus"></span>
         </section>
     </main>
 

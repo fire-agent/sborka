@@ -1692,20 +1692,27 @@
             });
     }
 
-    function showToast(message) {
+    function showToast(message, isSuccess) {
         var toast = document.createElement('div');
         toast.className = 'toast-banner';
+        if (isSuccess) {
+            toast.classList.add('success');
+        } else {
+            toast.classList.add('error');
+        }
         toast.textContent = message;
         document.body.appendChild(toast);
-        
+
         setTimeout(function () {
             toast.classList.add('show');
         }, 10);
-        
+
         setTimeout(function () {
             toast.classList.remove('show');
             setTimeout(function () {
-                document.body.removeChild(toast);
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
             }, 300);
         }, 3000);
     }
