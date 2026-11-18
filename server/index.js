@@ -6,8 +6,10 @@ try { process.loadEnvFile(); } catch {}
 // Простой сервер без сторонних библиотек: только встроенные модули Node.js.
 
 const http = require('node:http');
+const https = require('node:https');
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const db = require('./db');
 const { createRequestsHandler } = require('./requests');
 const { createAuthManager } = require('./auth');
@@ -594,6 +596,188 @@ function testChannelError(reason) {
     return 'Не удалось отправить тестовое сообщение.';
 }
 
+// ---------- Deep Link подключение мессенджеров ----------
+
+const DEEPLINK_TTL_MS = 5 * 60 * 1000;
+const pendingDeepLinks = new Map();
+
+// Генерирует криптослучайный код из 8 символов A-Za-z0-9
+function generateCode() {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const bytes = crypto.randomBytes(8);
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+        code += alphabet[bytes[i] % alphabet.length];
+    }
+    return code;
+}
+
+// Удаляет коды старше 5 минут
+function cleanupExpiredCodes() {
+    const now = Date.now();
+    for (const [code, item] of pendingDeepLinks) {
+        if (now - item.createdAt > DEEPLINK_TTL_MS) {
+            pendingDeepLinks.delete(code);
+        }
+    }
+}
+
+// Записывает {CHANNEL}_CHAT_ID в файл .env, не трогая остальные значения
+function updateEnvChatId(channel, chatId) {
+    const envKey = (channel === 'telegram' ? 'TELEGRAM' : 'MAX') + '_CHAT_ID';
+    const envPath = path.join(ROOT_DIR, '.env');
+    let content = '';
+    if (fs.existsSync(envPath)) {
+        content = fs.readFileSync(envPath, 'utf8');
+    }
+    const lines = content.split(/\r?\n/);
+    let replaced = false;
+    const pattern = new RegExp('^\\s*' + envKey + '\\s*=');
+    for (let i = 0; i < lines.length; i++) {
+        if (pattern.test(lines[i])) {
+            lines[i] = envKey + '=' + chatId;
+            replaced = true;
+            break;
+        }
+    }
+    if (!replaced) {
+        if (content && !/\n$/.test(content)) {
+            lines.push('');
+        }
+        lines.push(envKey + '=' + chatId);
+    }
+    fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf8');
+}
+
+// Записывает произвольное значение в файл .env (если файла нет — создаёт)
+function updateEnvValue(key, value) {
+    const envPath = path.join(ROOT_DIR, '.env');
+    let content = '';
+    if (fs.existsSync(envPath)) {
+        content = fs.readFileSync(envPath, 'utf8');
+    }
+    const lines = content.split(/\r?\n/);
+    let replaced = false;
+    const pattern = new RegExp('^\\s*' + key + '\\s*=');
+    for (let i = 0; i < lines.length; i++) {
+        if (pattern.test(lines[i])) {
+            lines[i] = key + '=' + value;
+            replaced = true;
+            break;
+        }
+    }
+    if (!replaced) {
+        if (content && !/\n$/.test(content)) {
+            lines.push('');
+        }
+        lines.push(key + '=' + value);
+    }
+    fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf8');
+}
+
+// Включает канал в public/config.json (notifications.telegram / notifications.max)
+function enableNotificationChannel(channel) {
+    const current = readConfigFile();
+    if (!current.notifications || typeof current.notifications !== 'object') {
+        current.notifications = { telegram: false, max: false, whatsapp: false };
+    }
+    if (channel === 'telegram') {
+        current.notifications.telegram = true;
+    } else if (channel === 'max') {
+        current.notifications.max = true;
+    }
+    fs.writeFileSync(configPath, JSON.stringify(current, null, 2) + '\n', 'utf8');
+}
+
+// Выполняет GET-запрос и возвращает { status, data }
+function httpsGetJson(url, headers) {
+    return new Promise(function (resolve) {
+        const req = https.request(url, {
+            method: 'GET',
+            family: 4,
+            headers: headers || {}
+        }, function (res) {
+            let data = '';
+            res.on('data', function (chunk) { data += chunk; });
+            res.on('end', function () {
+                try {
+                    resolve({ status: res.statusCode, data: JSON.parse(data) });
+                } catch (e) {
+                    resolve({ status: res.statusCode, data: null });
+                }
+            });
+        });
+        req.on('error', function (e) {
+            console.error('Deep Link: сетевая ошибка getUpdates — ' + e.message);
+            resolve({ status: 0, data: null });
+        });
+        req.on('timeout', function () {
+            req.destroy();
+            resolve({ status: 0, data: null });
+        });
+        req.setTimeout(15000);
+        req.end();
+    });
+}
+
+// Ищет в обновлениях сообщение вида /start {code} и возвращает chat.id (или null)
+function extractChatIdFromUpdates(updates, code) {
+    if (!updates || !Array.isArray(updates)) {
+        return null;
+    }
+    const needle = String(code);
+    for (const update of updates) {
+        const message = update && (update.message || update.update);
+        if (!message) continue;
+        const text = message.text || message.body || '';
+        if (text.indexOf('/start') !== -1 && text.indexOf(needle) !== -1) {
+            const chat = message.chat;
+            if (chat && chat.id !== undefined) {
+                return String(chat.id);
+            }
+            if (message.chat_id !== undefined) {
+                return String(message.chat_id);
+            }
+        }
+    }
+    return null;
+}
+
+// Опрашивает getUpdates нужного канала и возвращает chat.id, если найден код
+async function pollDeepLinkChannel(channel, code) {
+    const tokenKey = (channel === 'telegram' ? 'TELEGRAM' : 'MAX') + '_BOT_TOKEN';
+    const botToken = String(process.env[tokenKey] || '').trim();
+    if (!botToken) {
+        return null;
+    }
+
+    let url;
+    let headers;
+    if (channel === 'telegram') {
+        url = 'https://api.telegram.org/bot' + encodeURIComponent(botToken) + '/getUpdates';
+        headers = {};
+    } else {
+        url = 'https://platform-api.max.ru/v1/getUpdates';
+        headers = { 'Authorization': 'Bearer ' + botToken };
+    }
+
+    const result = await httpsGetJson(url, headers);
+    if (!result || !result.data) {
+        return null;
+    }
+
+    let updates = null;
+    if (channel === 'telegram') {
+        updates = (result.data.ok && Array.isArray(result.data.result)) ? result.data.result : null;
+    } else {
+        updates = Array.isArray(result.data.result)
+            ? result.data.result
+            : (Array.isArray(result.data) ? result.data : null);
+    }
+
+    return extractChatIdFromUpdates(updates, code);
+}
+
 // ---------- Маршрутизация ----------
 
 async function handleRequest(req, res) {
@@ -821,6 +1005,139 @@ async function handleRequest(req, res) {
                 ? result.error
                 : (reason ? testChannelError(reason) : 'Не удалось отправить тестовое сообщение.');
             sendJson(res, 502, { ok: false, error: error });
+        }
+        return;
+    }
+
+    if (pathname === '/api/admin/deeplink/request') {
+        if (req.method !== 'POST') {
+            sendJson(res, 405, { ok: false, error: 'Метод не поддерживается' });
+            return;
+        }
+        if (!auth.checkSession(req)) {
+            sendJson(res, 401, { ok: false, error: 'Необходима авторизация' });
+            return;
+        }
+        const body = await readJsonBody(req);
+        const channel = (body && typeof body.channel === 'string') ? body.channel.trim().toLowerCase() : '';
+        if (channel !== 'telegram' && channel !== 'max') {
+            sendJson(res, 400, { ok: false, error: 'Укажите канал telegram или max.' });
+            return;
+        }
+
+        cleanupExpiredCodes();
+
+        const usernameKey = channel === 'telegram' ? 'TELEGRAM_BOT_USERNAME' : 'MAX_BOT_USERNAME';
+        const botUsername = String(process.env[usernameKey] || '').trim();
+        if (!botUsername) {
+            sendJson(res, 400, { ok: false, error: 'Сначала задайте имя бота в файле .env (' + usernameKey + ').' });
+            return;
+        }
+
+        const code = generateCode();
+        pendingDeepLinks.set(code, { channel: channel, createdAt: Date.now() });
+
+        const deepLink = channel === 'telegram'
+            ? 'https://t.me/' + encodeURIComponent(botUsername) + '?start=' + code
+            : 'https://max.ru/' + encodeURIComponent(botUsername) + '?start=' + code;
+
+        sendJson(res, 200, { ok: true, code: code, deepLink: deepLink });
+        return;
+    }
+
+    if (pathname === '/api/admin/deeplink/poll') {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+            sendJson(res, 405, { ok: false, error: 'Метод не поддерживается' });
+            return;
+        }
+        if (!auth.checkSession(req)) {
+            sendJson(res, 401, { ok: false, error: 'Необходима авторизация' });
+            return;
+        }
+
+        cleanupExpiredCodes();
+
+        const pollUrl = new URL(req.url, 'http://localhost');
+        const code = pollUrl.searchParams.get('code') || '';
+        const item = pendingDeepLinks.get(code);
+        if (!item) {
+            sendJson(res, 200, { ok: true, connected: false, expired: true });
+            return;
+        }
+
+        let chatId;
+        try {
+            chatId = await pollDeepLinkChannel(item.channel, code);
+        } catch (e) {
+            chatId = null;
+        }
+
+        if (!chatId) {
+            sendJson(res, 200, { ok: true, connected: false });
+            return;
+        }
+
+        const tokenKey = (item.channel === 'telegram' ? 'TELEGRAM' : 'MAX') + '_BOT_TOKEN';
+        const botToken = String(process.env[tokenKey] || '').trim();
+
+        try {
+            updateEnvChatId(item.channel, chatId);
+            enableNotificationChannel(item.channel);
+            pendingDeepLinks.delete(code);
+
+            if (item.channel === 'telegram') {
+                sendTelegram(botToken, chatId, '✓ Канал подключён');
+            } else {
+                sendMAX(botToken, chatId, '✓ Канал подключён');
+            }
+        } catch (e) {
+            console.error('Deep Link: ошибка при подключении канала — ' + e.message);
+            sendJson(res, 500, { ok: false, error: 'Не удалось завершить подключение канала.' });
+            return;
+        }
+
+        sendJson(res, 200, { ok: true, connected: true });
+        return;
+    }
+
+    if (pathname === '/api/admin/manual-credentials') {
+        if (req.method !== 'POST') {
+            sendJson(res, 405, { ok: false, error: 'Метод не поддерживается' });
+            return;
+        }
+        if (!auth.checkSession(req)) {
+            sendJson(res, 401, { ok: false, error: 'Необходима авторизация' });
+            return;
+        }
+        const body = await readJsonBody(req);
+        const channel = (body && typeof body.channel === 'string') ? body.channel.trim().toLowerCase() : '';
+        const token = (body && typeof body.token === 'string') ? body.token.trim() : '';
+        const chatId = (body && typeof body.chatId === 'string') ? body.chatId.trim() : '';
+
+        if (channel !== 'telegram' && channel !== 'max') {
+            sendJson(res, 400, { ok: false, error: 'Укажите канал telegram или max.' });
+            return;
+        }
+        if (!token) {
+            sendJson(res, 400, { ok: false, error: 'Укажите bot token.' });
+            return;
+        }
+        if (!chatId) {
+            sendJson(res, 400, { ok: false, error: 'Укажите chat id.' });
+            return;
+        }
+
+        const prefix = channel === 'telegram' ? 'TELEGRAM' : 'MAX';
+        try {
+            updateEnvValue(prefix + '_BOT_TOKEN', token);
+            updateEnvValue(prefix + '_CHAT_ID', chatId);
+            process.env[prefix + '_BOT_TOKEN'] = token;
+            process.env[prefix + '_CHAT_ID'] = chatId;
+            enableNotificationChannel(channel);
+            sendJson(res, 200, { ok: true });
+        } catch (e) {
+            console.error('Manual credentials: ошибка при сохранении — ' + e.message);
+            sendJson(res, 500, { ok: false, error: 'Не удалось сохранить настройки канала.' });
         }
         return;
     }

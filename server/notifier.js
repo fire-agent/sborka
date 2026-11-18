@@ -73,6 +73,12 @@ function formatMessage(request) {
     lines.push('<b>Цена от:</b> ' + (request.priceFrom ? request.priceFrom + ' ₽' : 'уточняется'));
     lines.push('<b>Имя:</b> ' + (request.name || '-'));
     lines.push('<b>Телефон:</b> ' + (request.phone || '-'));
+    if (request.phone) {
+        var digits = request.phone.replace(/\D/g, '');
+        if (digits) {
+            lines.push('<a href="https://wa.me/' + digits + '">📱 Написать в WhatsApp</a>');
+        }
+    }
     if (request.address) {
         lines.push('<b>Адрес:</b> ' + request.address);
     }

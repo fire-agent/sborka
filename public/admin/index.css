@@ -918,6 +918,67 @@ body {
     outline-offset: 2px;
 }
 
+.deeplink-btn {
+    align-self: flex-start;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.deeplink-btn:hover, .deeplink-btn:focus-visible {
+    opacity: 0.92;
+    outline: none;
+}
+
+.manual-setup {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fafafa;
+}
+
+.manual-setup summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    color: #333;
+}
+
+.manual-setup label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.manual-setup input {
+    font-size: 15px;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: inherit;
+    width: 100%;
+}
+
+.manual-setup input:focus {
+    outline: 2px solid var(--primary);
+    border-color: transparent;
+}
+
+.manual-setup .save-btn {
+    align-self: flex-start;
+    margin-top: 12px;
+    padding: 9px 16px;
+    font-size: 14px;
+}
+
 .test-btn {
     align-self: flex-start;
     background: #eef2ff;

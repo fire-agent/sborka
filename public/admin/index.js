@@ -89,6 +89,16 @@
         el.testTelegramStatus = document.getElementById('testTelegramStatus');
         el.testMaxStatus = document.getElementById('testMaxStatus');
         el.testWhatsappStatus = document.getElementById('testWhatsappStatus');
+        el.deeplinkTelegram = document.getElementById('deeplinkTelegram');
+        el.deeplinkMax = document.getElementById('deeplinkMax');
+        el.deeplinkTelegramStatus = document.getElementById('deeplinkTelegramStatus');
+        el.deeplinkMaxStatus = document.getElementById('deeplinkMaxStatus');
+        el.manualTelegramToken = document.getElementById('manualTelegramToken');
+        el.manualTelegramChatId = document.getElementById('manualTelegramChatId');
+        el.manualMaxToken = document.getElementById('manualMaxToken');
+        el.manualMaxChatId = document.getElementById('manualMaxChatId');
+        el.saveManualTelegram = document.getElementById('saveManualTelegram');
+        el.saveManualMax = document.getElementById('saveManualMax');
         el.saveNotifBtn = document.getElementById('saveNotifBtn');
         el.saveNotifStatus = document.getElementById('saveNotifStatus');
         el.currentPassword = document.getElementById('currentPassword');
@@ -122,6 +132,10 @@
         el.testTelegram.addEventListener('click', function () { sendTestNotification('telegram'); });
         el.testMax.addEventListener('click', function () { sendTestNotification('max'); });
         el.testWhatsapp.addEventListener('click', function () { sendTestNotification('whatsapp'); });
+        el.deeplinkTelegram.addEventListener('click', function () { startDeepLink('telegram'); });
+        el.deeplinkMax.addEventListener('click', function () { startDeepLink('max'); });
+        el.saveManualTelegram.addEventListener('click', function () { saveManualCredentials('telegram'); });
+        el.saveManualMax.addEventListener('click', function () { saveManualCredentials('max'); });
         setupColorSync();
         setupAdminPhoneMask();
 
@@ -1703,6 +1717,140 @@
             .catch(function () {
                 statusEl.textContent = 'Не удалось отправить тест. Проверьте соединение.';
                 statusEl.className = 'test-status fail';
+            });
+    }
+
+    function deeplinkStatusEl(channel) {
+        return channel === 'telegram' ? el.deeplinkTelegramStatus : el.deeplinkMaxStatus;
+    }
+
+    function setDeeplinkStatus(channel, message, ok) {
+        var statusEl = deeplinkStatusEl(channel);
+        statusEl.textContent = message;
+        statusEl.className = 'test-status ' + (ok ? 'ok' : 'fail');
+    }
+
+    function startDeepLink(channel) {
+        setDeeplinkStatus(channel, 'Генерация ссылки…', false);
+
+        fetch('/api/admin/deeplink/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel: channel })
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    setDeeplinkStatus(channel, (result.data && result.data.error) || 'Не удалось создать ссылку.', false);
+                    return;
+                }
+
+                var code = result.data.code;
+                var deepLink = result.data.deepLink;
+                window.open(deepLink, '_blank');
+                setDeeplinkStatus(channel, 'Откройте бота и нажмите START…', false);
+
+                pollDeepLink(channel, code, Date.now());
+            })
+            .catch(function () {
+                setDeeplinkStatus(channel, 'Не удалось создать ссылку. Проверьте соединение.', false);
+            });
+    }
+
+    function pollDeepLink(channel, code, startedAt) {
+        var timeoutMs = 5 * 60 * 1000;
+        var intervalMs = 2000;
+        var timer = setInterval(function () {
+            if (Date.now() - startedAt > timeoutMs) {
+                clearInterval(timer);
+                setDeeplinkStatus(channel, 'Время истекло', false);
+                return;
+            }
+
+            fetch('/api/admin/deeplink/poll?code=' + encodeURIComponent(code), {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store'
+            })
+                .then(function (response) {
+                    return response.json().catch(function () {
+                        return { ok: false };
+                    }).then(function (data) {
+                        return { status: response.status, data: data };
+                    });
+                })
+                .then(function (result) {
+                    if (result.status === 401) {
+                        clearInterval(timer);
+                        window.location.href = '/admin/login';
+                        return;
+                    }
+                    if (!result.data || result.data.ok !== true) {
+                        clearInterval(timer);
+                        setDeeplinkStatus(channel, (result.data && result.data.error) || 'Ошибка проверки подключения.', false);
+                        return;
+                    }
+                    if (result.data.connected === true) {
+                        clearInterval(timer);
+                        setDeeplinkStatus(channel, '✓ Подключено', true);
+                        loadNotifications();
+                    }
+                })
+                .catch(function () {
+                    // Сетевые ошибки игнорируем: повторим на следующем шаге опроса.
+                });
+        }, intervalMs);
+    }
+
+    function saveManualCredentials(channel) {
+        var token = channel === 'telegram' ? el.manualTelegramToken.value : el.manualMaxToken.value;
+        var chatId = channel === 'telegram' ? el.manualTelegramChatId.value : el.manualMaxChatId.value;
+        var statusEl = deeplinkStatusEl(channel);
+
+        if (!token.trim() || !chatId.trim()) {
+            setDeeplinkStatus(channel, 'Заполните Bot Token и Chat ID.', false);
+            return;
+        }
+
+        statusEl.textContent = 'Сохранение…';
+        statusEl.className = 'test-status';
+
+        fetch('/api/admin/manual-credentials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel: channel, token: token.trim(), chatId: chatId.trim() })
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    setDeeplinkStatus(channel, (result.data && result.data.error) || 'Не удалось сохранить настройки.', false);
+                    return;
+                }
+                setDeeplinkStatus(channel, '✓ Сохранено', true);
+                loadNotifications();
+            })
+            .catch(function () {
+                setDeeplinkStatus(channel, 'Не удалось сохранить настройки. Проверьте соединение.', false);
             });
     }
 
