@@ -15,5 +15,8 @@
     "demo:windows": "copy /Y public\\configs\\windows.json public\\config.json",
     "demo:furniture": "copy /Y public\\configs\\furniture.json public\\config.json",
     "demo:cleaning": "copy /Y public\\configs\\cleaning.json public\\config.json"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
   }
 }

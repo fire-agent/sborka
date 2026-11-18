@@ -63,7 +63,6 @@
         el.exportClientsCsv = document.getElementById('exportClientsCsv');
         el.cfgCompanyName = document.getElementById('cfgCompanyName');
         el.cfgTitle = document.getElementById('cfgTitle');
-        el.cfgSubtitle = document.getElementById('cfgSubtitle');
         el.cfgColorPrimary = document.getElementById('cfgColorPrimary');
         el.cfgColorPrimaryHex = document.getElementById('cfgColorPrimaryHex');
         el.cfgColorAccent = document.getElementById('cfgColorAccent');
@@ -80,6 +79,15 @@
         el.cfgAddService = document.getElementById('cfgAddService');
         el.cfgSaveBtn = document.getElementById('cfgSaveBtn');
         el.cfgSaveStatus = document.getElementById('cfgSaveStatus');
+        el.cfgTagline = document.getElementById('cfgTagline');
+        el.cfgAddress = document.getElementById('cfgAddress');
+        el.cfgWorkHours = document.getElementById('cfgWorkHours');
+        el.cfgAdvantagesList = document.getElementById('cfgAdvantagesList');
+        el.cfgAddAdvantage = document.getElementById('cfgAddAdvantage');
+        el.qrImage = document.getElementById('qrImage');
+        el.generateQrBtn = document.getElementById('generateQrBtn');
+        el.downloadPng = document.getElementById('downloadPng');
+        el.downloadSvg = document.getElementById('downloadSvg');
         el.notifTelegram = document.getElementById('notifTelegram');
         el.notifMax = document.getElementById('notifMax');
         el.notifWhatsapp = document.getElementById('notifWhatsapp');
@@ -124,6 +132,10 @@
         el.cfgAddService.addEventListener('click', function () {
             addServiceRow(null);
         });
+        el.cfgAddAdvantage.addEventListener('click', function () {
+            addAdvantageRow(null);
+        });
+        el.generateQrBtn.addEventListener('click', generateAndRenderQR);
         el.cfgLogoUpload.addEventListener('click', onLogoUpload);
         el.cfgLogoDelete.addEventListener('click', onLogoDelete);
         el.cfgSaveBtn.addEventListener('click', onSaveSettings);
@@ -1029,9 +1041,12 @@
             clientsState.loaded = true;
             loadClients();
         }
-        if (name === 'settings' && !settingsLoaded) {
-            settingsLoaded = true;
-            loadSettings();
+        if (name === 'settings') {
+            if (!settingsLoaded) {
+                settingsLoaded = true;
+                loadSettings();
+            }
+            generateAndRenderQR();
         }
         if (name === 'notifications' && !notificationsLoaded) {
             notificationsLoaded = true;
@@ -1360,7 +1375,6 @@
 
         el.cfgCompanyName.value = cfg.companyName || '';
         el.cfgTitle.value = cfg.title || '';
-        el.cfgSubtitle.value = cfg.subtitle || '';
 
         var colors = (cfg.colors && typeof cfg.colors === 'object') ? cfg.colors : {};
         var primary = colors.primary || '#319795';
@@ -1377,8 +1391,71 @@
         el.cfgWhatsapp.value = contacts.whatsapp || '';
         el.cfgMax.value = contacts.max || '';
 
+        el.cfgTagline.value = cfg.tagline || '';
+        el.cfgAddress.value = cfg.address || '';
+        el.cfgWorkHours.value = cfg.workHours || '';
+        renderAdvantageRows(cfg.advantages || []);
         renderServiceRows(cfg.services || []);
         updateLogoPreview();
+    }
+
+    function renderAdvantageRows(advantages) {
+        el.cfgAdvantagesList.innerHTML = '';
+        var list = Array.isArray(advantages) ? advantages : [];
+        list.slice(0, 3).forEach(function (adv) {
+            addAdvantageRow(adv);
+        });
+        for (var i = list.length; i < 3; i++) {
+            addAdvantageRow(null);
+        }
+    }
+
+    function addAdvantageRow(advantage) {
+        var row = document.createElement('div');
+        row.className = 'advantage-row';
+
+        var titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.className = 'advantage-title';
+        titleInput.placeholder = 'Название';
+        titleInput.value = (advantage && advantage.title) || '';
+
+        var textInput = document.createElement('textarea');
+        textInput.rows = 2;
+        textInput.className = 'advantage-text';
+        textInput.placeholder = 'Описание';
+        textInput.value = (advantage && advantage.text) || '';
+
+        var removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'advantage-remove-btn';
+        removeBtn.textContent = 'Удалить';
+        removeBtn.addEventListener('click', function () {
+            row.remove();
+        });
+
+        row.appendChild(titleInput);
+        row.appendChild(textInput);
+        row.appendChild(removeBtn);
+        el.cfgAdvantagesList.appendChild(row);
+    }
+
+    function getAdvantagesFromForm() {
+        var rows = el.cfgAdvantagesList.querySelectorAll('.advantage-row');
+        var result = [];
+        for (var i = 0; i < rows.length; i++) {
+            var titleInput = rows[i].querySelector('.advantage-title');
+            var textInput = rows[i].querySelector('.advantage-text');
+            var title = str(titleInput.value);
+            var text = str(textInput.value);
+            if (title || text) {
+                result.push({ title: title, text: text });
+            }
+        }
+        while (result.length < 3) {
+            result.push({ title: '', text: '' });
+        }
+        return result.slice(0, 3);
     }
 
     function normalizeHexForColorInput(value) {
@@ -1551,7 +1628,10 @@
         var payload = {
             companyName: el.cfgCompanyName.value,
             title: el.cfgTitle.value,
-            subtitle: el.cfgSubtitle.value,
+            subtitle: cfg.subtitle || '',
+            tagline: el.cfgTagline.value,
+            address: el.cfgAddress.value,
+            workHours: el.cfgWorkHours.value,
             colors: {
                 primary: el.cfgColorPrimaryHex.value,
                 accent: el.cfgColorAccentHex.value
@@ -1562,6 +1642,7 @@
                 whatsapp: el.cfgWhatsapp.value,
                 max: el.cfgMax.value
             },
+            advantages: getAdvantagesFromForm(),
             services: services
         };
 
@@ -1910,5 +1991,23 @@
                 el.passwordStatus.textContent = '';
             }, 3000);
         }
+    }
+
+    function generateAndRenderQR() {
+        var url = window.location.origin;
+        var qrGen = new window.QRCodeGenerator();
+        var result = qrGen.generate(url, 512);
+
+        el.qrImage.src = result.png;
+
+        el.downloadPng.href = result.png;
+        el.downloadPng.download = 'qr-code.png';
+        el.downloadPng.hidden = false;
+
+        var svgBlob = new Blob([result.svg], { type: 'image/svg+xml' });
+        var svgUrl = URL.createObjectURL(svgBlob);
+        el.downloadSvg.href = svgUrl;
+        el.downloadSvg.download = 'qr-code.svg';
+        el.downloadSvg.hidden = false;
     }
 })();

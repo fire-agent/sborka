@@ -67,11 +67,25 @@
         </section>
 
         <section id="tabSettings" class="tab-content" hidden>
+            <h2>Логотип</h2>
+            <div class="settings-group">
+                <img id="cfgLogoPreview" src="" alt="Логотип" hidden>
+                <input type="file" id="cfgLogoFile" accept="image/jpeg,image/png,image/webp">
+                <button type="button" id="cfgLogoUpload">Загрузить</button>
+                <button type="button" id="cfgLogoDelete">Удалить</button>
+            </div>
+
+            <h2>Услуги</h2>
+            <div id="cfgServicesList" class="services-editor"></div>
+            <button type="button" id="cfgAddService" class="add-service-btn">+ Добавить услугу</button>
+
             <h2>Данные компании</h2>
             <div class="settings-group">
                 <label>Название компании <input type="text" id="cfgCompanyName"></label>
                 <label>Заголовок <input type="text" id="cfgTitle"></label>
-                <label>Подзаголовок <textarea id="cfgSubtitle" rows="2"></textarea></label>
+                <label>Подзаголовок (tagline) <textarea id="cfgTagline" rows="2"></textarea></label>
+                <label>Город и адрес <input type="text" id="cfgAddress" placeholder="Город, улица, дом"></label>
+                <label>График работы <textarea id="cfgWorkHours" rows="2" placeholder="Пн-Пт 9:00–18:00"></textarea></label>
             </div>
 
             <h2>Фирменные цвета</h2>
@@ -88,17 +102,24 @@
                 <label>MAX <input type="url" id="cfgMax" placeholder="https://max.ru/..."></label>
             </div>
 
-            <h2>Логотип</h2>
-            <div class="settings-group">
-                <img id="cfgLogoPreview" src="" alt="Логотип" hidden>
-                <input type="file" id="cfgLogoFile" accept="image/jpeg,image/png,image/webp">
-                <button type="button" id="cfgLogoUpload">Загрузить</button>
-                <button type="button" id="cfgLogoDelete">Удалить</button>
-            </div>
+            <h2>Преимущества (3 карточки)</h2>
+            <div id="cfgAdvantagesList" class="advantages-editor"></div>
+            <button type="button" id="cfgAddAdvantage" class="add-advantage-btn">+ Добавить преимущество</button>
 
-            <h2>Услуги</h2>
-            <div id="cfgServicesList" class="services-editor"></div>
-            <button type="button" id="cfgAddService" class="add-service-btn">+ Добавить услугу</button>
+            <h2>QR-код для визиток и типографии</h2>
+            <div class="qr-generator">
+                <p class="qr-hint">Генерация QR-кода для главной страницы сайта (window.location.origin)</p>
+                <div class="qr-preview">
+                    <img id="qrImage" src="" alt="QR-код" style="max-width: 200px; margin: 16px auto; display: block;">
+                </div>
+                <div class="qr-actions">
+                    <button type="button" id="generateQrBtn" class="qr-btn">Сгенерировать QR-код</button>
+                    <div class="qr-downloads">
+                        <a href="#" id="downloadPng" class="qr-download-btn" hidden>💾 Скачать PNG (512×512)</a>
+                        <a href="#" id="downloadSvg" class="qr-download-btn" hidden>💾 Скачать SVG (вектор)</a>
+                    </div>
+                </div>
+            </div>
 
             <div class="settings-actions">
                 <button type="button" id="cfgSaveBtn" class="save-btn">Сохранить настройки</button>
@@ -179,6 +200,7 @@
         <img id="lightboxImg" src="" alt="Фото заявки">
     </div>
 
+    <script src="/admin/vendor/qr-generator.js"></script>
     <script src="/admin/index.js" defer></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ремонт мебели — заявка мастеру</title>
+    <title id="pageTabTitle">Ремонт мебели — заявка мастеру</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,6 +12,10 @@
             <img id="company-logo" alt="Логотип" style="display: none;">
             <span id="companyName" class="company-name">Мастер</span>
             <a id="headerPhone" class="header-phone" href="#" hidden></a>
+            <div class="messaging" id="headerMessaging" hidden>
+                <a href="#" class="messaging-btn telegram-icon" title="Telegram" hidden></a>
+                <a href="#" class="messaging-btn whatsapp-icon" title="WhatsApp" hidden></a>
+            </div>
         </div>
     </header>
 
@@ -20,6 +24,19 @@
 
         <h1 id="pageTitle">Ремонт мебели — заявка мастеру</h1>
         <p id="subtitle" class="hint">Заполните форму и приложите 1–5 фото.</p>
+
+        <section class="hero">
+            <div class="hero-inner">
+                <h1 id="heroTitle"></h1>
+                <p id="heroTagline" class="hero-tagline"></p>
+                <button type="button" class="cta-button" id="ctaButton">Оставить заявку</button>
+            </div>
+        </section>
+
+        <div class="advantages-section" hidden>
+            <h2>Наши преимущества</h2>
+            <div class="advantages-grid" id="advantagesGrid"></div>
+        </div>
 
         <div class="field">
             <label for="name">Имя <span class="optional">(необязательно)</span></label>
@@ -76,6 +93,8 @@
         <div id="result" role="status" aria-live="polite"></div>
 
         <footer class="site-footer">
+            <div class="footer-address" id="footerAddress" hidden></div>
+            <div class="footer-hours" id="footerHours" hidden></div>
             <div id="footerContacts" class="footer-contacts" hidden></div>
             <p class="disclaimer">Нажимая «Отправить заявку», вы соглашаетесь с политикой обработки персональных данных.</p>
         </footer>

@@ -500,6 +500,12 @@ function mergeConfig(current, input) {
         companyName: base.companyName || '',
         title: base.title || '',
         subtitle: base.subtitle || '',
+        tagline: base.tagline || '',
+        address: base.address || '',
+        workHours: base.workHours || '',
+        telegramUrl: base.telegramUrl || '',
+        whatsappUrl: base.whatsappUrl || '',
+        advantages: base.advantages || [],
         colors: {
             primary: (base.colors && base.colors.primary) || '#319795',
             accent: (base.colors && base.colors.accent) || '#4fd1c5'
@@ -529,6 +535,39 @@ function mergeConfig(current, input) {
     }
     if (input.subtitle !== undefined) {
         out.subtitle = cleanConfigString(input.subtitle, 'Подзаголовок', 500, true);
+    }
+    if (input.tagline !== undefined) {
+        out.tagline = cleanConfigString(input.tagline, 'Слоган', 200, true);
+    }
+    if (input.address !== undefined) {
+        out.address = cleanConfigString(input.address, 'Адрес', 300, true);
+    }
+    if (input.workHours !== undefined) {
+        out.workHours = cleanConfigString(input.workHours, 'Часы работы', 200, true);
+    }
+    if (input.telegramUrl !== undefined) {
+        out.telegramUrl = cleanConfigUrl(input.telegramUrl, 'Telegram URL');
+    }
+    if (input.whatsappUrl !== undefined) {
+        out.whatsappUrl = cleanConfigUrl(input.whatsappUrl, 'WhatsApp URL');
+    }
+    if (input.advantages !== undefined) {
+        if (!Array.isArray(input.advantages)) {
+            throw new Error('Преимущества должны быть массивом');
+        }
+        if (input.advantages.length !== 3) {
+            throw new Error('Должно быть ровно 3 преимущества');
+        }
+        out.advantages = input.advantages.map(function (a, i) {
+            const label = 'Преимущество №' + (i + 1);
+            if (!a || typeof a !== 'object' || Array.isArray(a)) {
+                throw new Error(label + ' заполнено неверно');
+            }
+            return {
+                title: cleanConfigString(a.title, label + ': заголовок', 100, false),
+                text: cleanConfigString(a.text, label + ': описание', 200, false)
+            };
+        });
     }
 
     if (input.colors && typeof input.colors === 'object' && !Array.isArray(input.colors)) {

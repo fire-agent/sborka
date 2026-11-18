@@ -17,6 +17,11 @@
     var selectedServices = [];
 
     var el = {};
+    var advantages = [];
+    var address = '';
+    var workHours = '';
+    var telegramUrl = '';
+    var whatsappUrl = '';
 
     document.addEventListener('DOMContentLoaded', init);
 
@@ -44,11 +49,21 @@
         el.companyName = document.getElementById('companyName');
         el.companyLogo = document.getElementById('company-logo');
         el.pageTitle = document.getElementById('pageTitle');
+        el.pageTabTitle = document.getElementById('pageTabTitle');
         el.subtitle = document.getElementById('subtitle');
         el.headerPhone = document.getElementById('headerPhone');
         el.footerContacts = document.getElementById('footerContacts');
+        el.heroTitle = document.getElementById('heroTitle');
+        el.heroTagline = document.getElementById('heroTagline');
+        el.ctaButton = document.getElementById('ctaButton');
+        el.advantagesGrid = document.getElementById('advantagesGrid');
+        el.footerAddress = document.getElementById('footerAddress');
+        el.footerHours = document.getElementById('footerHours');
+        el.headerMessaging = document.getElementById('headerMessaging');
 
         updateCounter();
+
+        el.ctaButton.addEventListener('click', scrollToForm);
 
         el.photoInput.addEventListener('change', onFilesSelected);
         el.submitBtn.addEventListener('click', handleSubmit);
@@ -148,7 +163,7 @@
         if (companyName) el.companyName.textContent = companyName;
         if (title) {
             el.pageTitle.textContent = title;
-            document.title = title;
+            if (el.pageTabTitle) el.pageTabTitle.textContent = title;
         }
         if (subtitle) el.subtitle.textContent = subtitle;
     }
@@ -866,6 +881,100 @@
             .then(function () {
                 setLoading(false);
             });
+    }
+
+    // ---------- Витрина сайта (website) ----------
+
+    function renderAdvantages() {
+        el.advantagesGrid.innerHTML = '';
+        advantages.forEach(function (adv) {
+            var card = document.createElement('div');
+            card.className = 'advantage-card';
+            card.innerHTML = '<h3>' + escapeHtml(adv.title) + '</h3><p>' + escapeHtml(adv.text) + '</p>';
+            el.advantagesGrid.appendChild(card);
+        });
+        el.advantagesGrid.hidden = advantages.length === 0;
+    }
+
+    function updateHeaderMessaging() {
+        var hasTelegram = telegramUrl && telegramUrl.trim() !== '';
+        var hasWhatsApp = whatsappUrl && whatsappUrl.trim() !== '';
+
+        el.headerMessaging.hidden = !hasTelegram && !hasWhatsApp;
+
+        if (hasTelegram) {
+            var tgBtn = el.headerMessaging.querySelector('.telegram-icon');
+            tgBtn.href = telegramUrl;
+            tgBtn.hidden = false;
+        }
+        if (hasWhatsApp) {
+            var waBtn = el.headerMessaging.querySelector('.whatsapp-icon');
+            waBtn.href = whatsappUrl;
+            waBtn.hidden = false;
+        }
+    }
+
+    function scrollToForm() {
+        var firstField = document.querySelector('input[type="text"], textarea');
+        if (firstField) {
+            firstField.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            firstField.focus();
+        }
+    }
+
+    function escapeHtml(value) {
+        if (typeof value !== 'string') return '';
+        return value
+            .replace(/&/g, '&')
+            .replace(/</g, '<')
+            .replace(/>/g, '>')
+            .replace(/"/g, '"')
+            .replace(/'/g, '&#039;');
+    }
+
+    function applyConfig(config) {
+        // applyConfig сам не должен ломать страницу: каждую часть применяем отдельно
+        var steps = [applyTexts, applyColors, applyContacts, applyServices, applyWebsite];
+        for (var i = 0; i < steps.length; i++) {
+            try {
+                steps[i](config);
+            } catch (e) {
+                showConfigError();
+            }
+        }
+    }
+
+    function applyWebsite(config) {
+        address = str(config.address);
+        workHours = str(config.workHours);
+        telegramUrl = str(config.telegramUrl);
+        whatsappUrl = str(config.whatsappUrl);
+        advantages = Array.isArray(config.advantages) ? config.advantages.slice(0, 3) : [];
+
+        // Обновление Hero
+        var heroTitle = str(config.title) || str(config.companyName);
+        if (heroTitle) {
+            el.heroTitle.textContent = heroTitle;
+        }
+        if (config.tagline) {
+            el.heroTagline.textContent = config.tagline;
+        }
+
+        // Advantages
+        renderAdvantages();
+
+        // Footer
+        if (address) {
+            el.footerAddress.textContent = address;
+            el.footerAddress.hidden = false;
+        }
+        if (workHours) {
+            el.footerHours.textContent = workHours;
+            el.footerHours.hidden = false;
+        }
+
+        // Header messaging
+        updateHeaderMessaging();
     }
 
 })();

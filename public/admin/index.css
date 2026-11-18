@@ -1014,3 +1014,93 @@ body {
     border: none;
     border-top: 1px solid #e5e7eb;
 }
+
+/* Редактор преимуществ */
+.advantages-editor {
+    margin: 12px 0;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.advantage-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+
+.advantage-row input,
+.advantage-row textarea {
+    flex: 1;
+    min-width: 120px;
+}
+
+.advantage-remove-btn {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.add-advantage-btn {
+    margin-top: 8px;
+}
+
+/* Генератор QR */
+.qr-generator {
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin: 16px 0;
+}
+
+.qr-hint {
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: #666;
+}
+
+.qr-preview img {
+    max-width: 200px;
+    margin: 16px auto;
+    display: block;
+    border: 1px solid #ddd;
+}
+
+.qr-actions {
+    text-align: center;
+    margin-top: 16px;
+}
+
+.qr-btn, .qr-download-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.qr-btn:hover, .qr-download-btn:hover {
+    opacity: 0.9;
+}
+
+.qr-downloads {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.qr-download-btn {
+    background: #16a34a;
+}
