@@ -1,3 +1,5 @@
+require('node:dns').setDefaultResultOrder('ipv4first');
+
 try { process.loadEnvFile(); } catch {}
 'use strict';
 

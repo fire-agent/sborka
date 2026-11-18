@@ -111,6 +111,7 @@ async function sendTelegram(botToken, chatId, text) {
         const bodyLength = Buffer.byteLength(postData);
         const req = https.request(url, {
             method: 'POST',
+            family: 4,
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': String(bodyLength)
@@ -173,6 +174,7 @@ async function sendMAX(botToken, chatId, text) {
         const bodyLength = Buffer.byteLength(postData);
         const req = https.request(url, {
             method: 'POST',
+            family: 4,
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': String(bodyLength),
@@ -242,6 +244,7 @@ async function sendWhatsApp(apiUrl, idInstance, apiTokenInstance, chatId, text) 
         const bodyLength = Buffer.byteLength(postData);
         const req = https.request(url, {
             method: 'POST',
+            family: 4,
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': String(bodyLength)
