@@ -1,13 +1,19 @@
 meta:
-  environment: node
+  environment: nodejs
   toolchain:
     name: npm
-    version: "20"
-
+    version: "22"
 build:
   skip: false
-
+  additionalCommands: null
+  artifacts:
+    "*": /
 run:
   scriptName: server/index.js
+  scriptArguments: null
+  nodeArguments: null
+  command: npm run start
   persistenceMount: /data
-  containerPort: 3000
+  containerPort: "3000"
+  singleton: true
+  zeroDowntime: false
