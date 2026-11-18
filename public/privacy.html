@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Политика обработки персональных данных</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .privacy-page {
+            max-width: 720px;
+        }
+        .privacy-page h1 {
+            font-size: 24px;
+        }
+        .privacy-page h2 {
+            font-size: 18px;
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+        .privacy-page p {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .privacy-page ul {
+            margin: 0 0 12px 20px;
+        }
+        .privacy-page li {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .privacy-page .back-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-inner">
+            <span id="companyName" class="company-name">Компания</span>
+            <a id="headerPhone" class="header-phone" href="#" hidden></a>
+        </div>
+    </header>
+
+    <div class="container privacy-page">
+        <div id="configError" class="config-error" role="alert" hidden></div>
+
+        <a class="back-link" href="index.html">← Назад к заявке</a>
+
+        <h1>Политика обработки персональных данных</h1>
+
+        <p>Настоящая Политика обработки персональных данных (далее — «Политика») разработана в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» и определяет порядок обработки персональных данных, которые вы предоставляете при заполнении формы на нашем сайте.</p>
+
+        <h2>1. Оператор персональных данных</h2>
+        <p id="operatorText">Оператором персональных данных является компания.</p>
+
+        <h2>2. Какие данные мы обрабатываем</h2>
+        <ul>
+            <li>имя (указывается по желанию);</li>
+            <li>контактный телефон;</li>
+            <li>описание заявки / проблемы;</li>
+            <li>фотографии, приложенные к заявке (до 5 файлов);</li>
+            <li>выбранная услуга (при наличии).</li>
+        </ul>
+
+        <h2>3. Цели обработки</h2>
+        <p>Персональные данные обрабатываются исключительно в целях:</p>
+        <ul>
+            <li>обработки и выполнения вашей заявки;</li>
+            <li>связи с вами для уточнения деталей и расчёта стоимости работ;</li>
+            <li>улучшения качества обслуживания.</li>
+        </ul>
+
+        <h2>4. Правовые основания</h2>
+        <p>Обработка персональных данных осуществляется на основании вашего согласия, которое вы подтверждаете, отмечая соответствующий пункт и отправляя заявку.</p>
+
+        <h2>5. Срок обработки</h2>
+        <p>Персональные данные обрабатываются до достижения целей обработки либо до момента отзыва вами согласия. После этого данные удаляются, если иное не предусмотрено законодательством Российской Федерации.</p>
+
+        <h2>6. Права субъекта персональных данных</h2>
+        <p>Вы вправе в любой момент отозвать согласие на обработку персональных данных, а также запросить их уточнение, блокирование или уничтожение, обратившись к оператору по указанным ниже контактам.</p>
+
+        <h2>7. Контакты</h2>
+        <p id="contactText">Свяжитесь с нами по телефону или в мессенджерах, указанных в шапке и подвале сайта.</p>
+
+        <footer class="site-footer">
+            <div id="footerContacts" class="footer-contacts" hidden></div>
+        </footer>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            var CONFIG_URL = 'config.json';
+            var COLOR_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+            var el = {};
+
+            document.addEventListener('DOMContentLoaded', init);
+
+            function init() {
+                el.companyName = document.getElementById('companyName');
+                el.headerPhone = document.getElementById('headerPhone');
+                el.footerContacts = document.getElementById('footerContacts');
+                el.configError = document.getElementById('configError');
+                el.operatorText = document.getElementById('operatorText');
+                el.contactText = document.getElementById('contactText');
+
+                fetch(CONFIG_URL, { cache: 'no-cache' })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (config) {
+                        applyConfig(config);
+                    })
+                    .catch(function () {
+                        showConfigError();
+                    });
+            }
+
+            function str(value) {
+                return (typeof value === 'string') ? value.trim() : '';
+            }
+
+            function isHttpsUrl(value) {
+                return typeof value === 'string' && value.indexOf('https://') === 0;
+            }
+
+            function showConfigError() {
+                el.configError.textContent = 'Не удалось загрузить настройки (config.json).';
+                el.configError.hidden = false;
+            }
+
+            function applyConfig(config) {
+                var companyName = str(config.companyName) || 'Компания';
+                el.companyName.textContent = companyName;
+                document.title = companyName + ' — Политика обработки персональных данных';
+                el.operatorText.textContent = 'Оператором персональных данных является ' + companyName + '.';
+
+                if (config.colors && typeof config.colors === 'object') {
+                    var root = document.documentElement;
+                    if (typeof config.colors.primary === 'string' && COLOR_RE.test(config.colors.primary.trim())) {
+                        root.style.setProperty('--primary', config.colors.primary.trim());
+                    }
+                    if (typeof config.colors.accent === 'string' && COLOR_RE.test(config.colors.accent.trim())) {
+                        root.style.setProperty('--accent', config.colors.accent.trim());
+                    }
+                }
+
+                var contacts = (config.contacts && typeof config.contacts === 'object') ? config.contacts : {};
+                var phone = str(contacts.phone);
+                var phoneDigits = phone.replace(/[^+\d]/g, '');
+
+                el.headerPhone.hidden = true;
+                el.footerContacts.hidden = true;
+                el.footerContacts.textContent = '';
+                el.contactText.textContent = 'Свяжитесь с нами по телефону или в мессенджерах, указанных в шапке и подвале сайта.';
+
+                if (phone && /\d/.test(phoneDigits)) {
+                    el.headerPhone.textContent = phone;
+                    el.headerPhone.setAttribute('href', 'tel:' + phoneDigits);
+                    el.headerPhone.hidden = false;
+                    el.footerContacts.appendChild(createLink('tel:' + phoneDigits, phone, false));
+                    el.contactText.textContent = 'Свяжитесь с нами по телефону ' + phone + ' или в мессенджерах, указанных в подвале сайта.';
+                }
+
+                var messengers = [
+                    { key: 'telegram', label: 'Telegram' },
+                    { key: 'whatsapp', label: 'WhatsApp' },
+                    { key: 'max', label: 'MAX' }
+                ];
+
+                var hasFooter = false;
+                for (var i = 0; i < messengers.length; i++) {
+                    var link = str(contacts[messengers[i].key]);
+                    if (link && isHttpsUrl(link)) {
+                        el.footerContacts.appendChild(createLink(link, messengers[i].label, true));
+                        hasFooter = true;
+                    }
+                }
+
+                if (phone && /\d/.test(phoneDigits)) hasFooter = true;
+                if (hasFooter) el.footerContacts.hidden = false;
+            }
+
+            function createLink(href, text, external) {
+                var a = document.createElement('a');
+                a.setAttribute('href', href);
+                a.textContent = text;
+                if (external) {
+                    a.setAttribute('target', '_blank');
+                    a.setAttribute('rel', 'noopener');
+                }
+                return a;
+            }
+        })();
+    </script>
+</body>
+</html>

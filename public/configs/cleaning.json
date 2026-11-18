@@ -1,0 +1,32 @@
+{
+  "companyName": "Чистый Дом",
+  "title": "Клининг квартир и химчистка мебели",
+  "subtitle": "Свежесть и чистота в вашем доме! Профессиональная уборка квартир и химчистка диванов, матрасов, штор. Заполните форму и получите бесплатную консультацию!",
+  "colors": {
+    "primary": "#38a169",
+    "accent": "#4fd1c5"
+  },
+  "contacts": {
+    "phone": "+7 900 000-00-00",
+    "telegram": "https://t.me/example_cleaning",
+    "whatsapp": "https://wa.me/79000000000",
+    "max": ""
+  },
+  "services": [
+    { "name": "Генеральная уборка", "priceFrom": 2500 },
+    { "name": "Послеремонтная уборка", "priceFrom": 3000 },
+    { "name": "Химчистка дивана", "priceFrom": 2000 },
+    { "name": "Химчистка матраса", "priceFrom": 1500 },
+    { "name": "Химчистка штор", "priceFrom": 1200 },
+    { "name": "Уборка офиса", "priceFrom": 2000 },
+    { "name": "Поддерживающая уборка", "priceFrom": 1500 },
+    { "name": "Химчистка ковра", "priceFrom": 1800 },
+    { "name": "Уборка после животных", "priceFrom": 2200 },
+    { "name": "Уборка на выход", "priceFrom": 2800 }
+  ],
+  "notifications": {
+    "telegram": true,
+    "max": false,
+    "whatsapp": false
+  }
+}

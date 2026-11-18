@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кабинет менеджера</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-inner">
+            <div class="brand">
+                <span id="companyName" class="company-name">Менеджер</span>
+                <span class="page-title">Заявки</span>
+            </div>
+            <button type="button" id="logoutBtn" class="logout-btn">Выйти</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="configError" class="notice notice-error" role="alert" hidden></div>
+        <div id="appError" class="notice notice-error" role="alert" hidden></div>
+
+        <section class="filters" aria-label="Фильтры заявок">
+            <div class="search-field">
+                <label for="searchInput">Поиск</label>
+                <input type="search" id="searchInput" placeholder="Имя или телефон" autocomplete="off">
+            </div>
+
+            <div class="status-tabs" id="statusTabs" role="tablist" aria-label="Фильтр по статусу">
+                <button type="button" class="status-tab is-active" data-status="">Все</button>
+                <button type="button" class="status-tab" data-status="new">Новые</button>
+                <button type="button" class="status-tab" data-status="in_progress">В работе</button>
+                <button type="button" class="status-tab" data-status="done">Выполнены</button>
+                <button type="button" class="status-tab" data-status="cancelled">Отклонены</button>
+            </div>
+        </section>
+
+        <div id="summary" class="summary" hidden></div>
+        <div id="requestsList" class="requests-list" aria-live="polite"></div>
+        <div id="emptyState" class="empty-state" hidden>Заявок не найдено.</div>
+
+        <div class="pagination">
+            <button type="button" id="loadMoreBtn" class="load-more-btn" hidden>Показать ещё</button>
+        </div>
+    </main>
+
+    <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Просмотр фото">
+        <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Закрыть">&times;</button>
+        <img id="lightboxImg" src="" alt="Фото заявки">
+    </div>
+
+    <script src="index.js" defer></script>
+</body>
+</html>

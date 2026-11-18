@@ -1,0 +1,34 @@
+{
+  "companyName": "Мастер Мебель",
+  "title": "Сборка и ремонт мебели",
+  "subtitle": "Профессиональная сборка шкафов, кухонь, кроватей и другой мебели! Заполните форму и приложите 1–5 фото. Мастер перезвонит и назовёт точную цену.",
+  "colors": {
+    "primary": "#c05621",
+    "accent": "#d69e2e"
+  },
+  "contacts": {
+    "phone": "+7 900 000-00-00",
+    "telegram": "https://t.me/example_furniture",
+    "whatsapp": "https://wa.me/79000000000",
+    "max": ""
+  },
+  "services": [
+    { "name": "Сборка шкафа", "priceFrom": 1500 },
+    { "name": "Сборка кухни", "priceFrom": 4000 },
+    { "name": "Сборка кровати", "priceFrom": 1200 },
+    { "name": "Сборка дивана", "priceFrom": 2500 },
+    { "name": "Сборка комода", "priceFrom": 900 },
+    { "name": "Сборка стола", "priceFrom": 700 },
+    { "name": "Сборка прихожей", "priceFrom": 3500 },
+    { "name": "Ремонт дверцы / петель", "priceFrom": 500 },
+    { "name": "Замена фурнитуры", "priceFrom": 400 },
+    { "name": "Ремонт выдвижных ящиков", "priceFrom": 700 },
+    { "name": "Перетяжка стула", "priceFrom": 1800 },
+    { "name": "Перетяжка дивана", "priceFrom": 6000 }
+  ],
+  "notifications": {
+    "telegram": true,
+    "max": false,
+    "whatsapp": false
+  }
+}

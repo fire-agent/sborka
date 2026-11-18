@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ремонт мебели — заявка мастеру</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-inner">
+            <span id="companyName" class="company-name">Мастер</span>
+            <a id="headerPhone" class="header-phone" href="#" hidden></a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="configError" class="config-error" role="alert" hidden></div>
+
+        <h1 id="pageTitle">Ремонт мебели — заявка мастеру</h1>
+        <p id="subtitle" class="hint">Заполните форму и приложите 1–5 фото.</p>
+
+        <div class="field">
+            <label for="name">Имя <span class="optional">(необязательно)</span></label>
+            <input type="text" id="name" autocomplete="name" placeholder="Как к вам обращаться?">
+        </div>
+
+        <div class="field">
+            <label for="contact">Телефон</label>
+            <input type="tel" id="contact" inputmode="tel" autocomplete="tel"
+                   placeholder="+7 999 999-99-99" aria-describedby="contactError" required>
+            <span id="contactError" class="field-hint"></span>
+        </div>
+
+        <div class="field" id="serviceField" hidden>
+            <label for="service">Услуга</label>
+            <div class="service-picker">
+                <select id="service" aria-describedby="serviceError">
+                    <option value="">Выберите услугу</option>
+                </select>
+                <button type="button" id="addServiceBtn" class="add-service-btn">Добавить</button>
+            </div>
+            <span id="serviceError" class="field-hint"></span>
+            <div id="selectedServices" class="selected-services" aria-live="polite"></div>
+            <span id="priceInfo" class="price-info" aria-live="polite"></span>
+        </div>
+
+        <div class="field">
+            <label for="description">Опишите проблему</label>
+            <textarea id="description" rows="5" placeholder="Что нужно сделать?" required></textarea>
+        </div>
+
+        <div class="field">
+            <label>Фотографии</label>
+            <input type="file" id="photoInput" accept="image/*" multiple>
+            <span id="counter" class="counter"></span>
+            <div id="preview" class="preview-grid"></div>
+            <div id="photoErrors" class="errors" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="field checkbox-field">
+            <label class="checkbox-label">
+                <input type="checkbox" id="agreement" checked required>
+                <span>Согласен на <a href="privacy.html" target="_blank" rel="noopener">обработку персональных данных</a></span>
+            </label>
+        </div>
+
+        <!-- Ловушка для спам-ботов: у человека это поле всегда пустое -->
+        <div class="honeypot" aria-hidden="true">
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+
+        <button type="button" id="submitBtn">Отправить заявку</button>
+
+        <div id="result" role="status" aria-live="polite"></div>
+
+        <footer class="site-footer">
+            <div id="footerContacts" class="footer-contacts" hidden></div>
+            <p class="disclaimer">Нажимая «Отправить заявку», вы соглашаетесь с политикой обработки персональных данных.</p>
+        </footer>
+    </div>
+    <script src="app.js" defer></script>
+</body>
+</html>
