@@ -77,6 +77,8 @@ function formatMessage(request) {
         var digits = request.phone.replace(/\D/g, '');
         if (digits) {
             lines.push('<a href="https://wa.me/' + digits + '">📱 Написать в WhatsApp</a>');
+            lines.push('<a href="https://t.me/+' + digits + '">✈️ Написать в Telegram</a>');
+            lines.push('<a href="https://max.ru/' + digits + '">💬 Написать в MAX</a>');
         }
     }
     if (request.address) {

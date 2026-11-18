@@ -1448,6 +1448,17 @@ async function handleRequest(req, res) {
         return;
     }
 
+    // ---------- Демо-витрины ----------
+
+    if (pathname === '/okna' || pathname === '/mebel' || pathname === '/cleaning') {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+            sendText(res, 405, 'Метод не поддерживается');
+            return;
+        }
+        serveStatic(req, res, '/index.html');
+        return;
+    }
+
     if (pathname === '/api/requests') {
         if (req.method === 'POST') {
             return requestsHandler(req, res);

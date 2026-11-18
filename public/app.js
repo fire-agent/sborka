@@ -79,13 +79,20 @@
 
     function applyDemoFromUrl() {
         try {
-            var urlParams = new URLSearchParams(window.location.search);
-            var demoParam = urlParams.get('demo');
-            if (demoParam) {
-                var demoValue = String(demoParam).trim().toLowerCase();
-                if (demoValue === 'windows' || demoValue === 'furniture' || demoValue === 'cleaning') {
-                    CONFIG_URL = 'configs/' + demoValue + '.json?t=' + Date.now();
-                }
+            var pathname = window.location.pathname;
+            var demoType = null;
+            
+            if (pathname === '/okna') {
+                demoType = 'windows';
+            } else if (pathname === '/mebel') {
+                demoType = 'furniture';
+            } else if (pathname === '/cleaning') {
+                demoType = 'cleaning';
+            }
+            
+            if (demoType) {
+                CONFIG_URL = 'configs/' + demoType + '.json?t=' + Date.now();
+                window._demoType = demoType;
             }
         } catch (e) {
             // Ignore URL parsing errors
@@ -826,17 +833,22 @@
         var formData = new FormData();
         formData.append('name', el.name.value.trim());
         formData.append('phone', formatPhoneMask(el.contact.value));
-        formData.append('description', el.description.value.trim());
-        formData.append('website', el.website.value);
-
-        // Отправляем параметр demo, чтобы сервер мог загрузить правильный конфиг
-        if (CONFIG_URL.indexOf('configs/windows.json') !== -1) {
-            formData.append('demo', 'windows');
-        } else if (CONFIG_URL.indexOf('configs/furniture.json') !== -1) {
-            formData.append('demo', 'furniture');
-        } else if (CONFIG_URL.indexOf('configs/cleaning.json') !== -1) {
-            formData.append('demo', 'cleaning');
+        
+        var description = el.description.value.trim();
+        if (window._demoType) {
+            var demoLabel = '';
+            if (window._demoType === 'windows') {
+                demoLabel = '[Демо: Окна] ';
+            } else if (window._demoType === 'furniture') {
+                demoLabel = '[Демо: Мебель] ';
+            } else if (window._demoType === 'cleaning') {
+                demoLabel = '[Демо: Клининг] ';
+            }
+            description = demoLabel + description;
         }
+        
+        formData.append('description', description);
+        formData.append('website', el.website.value);
 
         for (var i = 0; i < selectedServices.length; i++) {
             formData.append('service', selectedServices[i].name);
