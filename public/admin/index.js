@@ -1606,6 +1606,11 @@
     }
 
     function onSaveSettings() {
+        // Визуальный отклик на кнопке
+        var originalText = el.cfgSaveBtn.textContent;
+        el.cfgSaveBtn.textContent = 'Сохраняем...';
+        el.cfgSaveBtn.disabled = true;
+
         var services = [];
         var rows = el.cfgServicesList.querySelectorAll('.service-row');
 
@@ -1628,7 +1633,7 @@
         var payload = {
             companyName: el.cfgCompanyName.value,
             title: el.cfgTitle.value,
-            subtitle: cfg.subtitle || '',
+            subtitle: '',
             tagline: el.cfgTagline.value,
             address: el.cfgAddress.value,
             workHours: el.cfgWorkHours.value,
@@ -1664,15 +1669,45 @@
                     return;
                 }
                 if (!result.data || result.data.ok !== true) {
+                    el.cfgSaveBtn.textContent = originalText;
+                    el.cfgSaveBtn.disabled = false;
                     showSettingsStatus((result.data && result.data.error) || 'Не удалось сохранить настройки.', false);
                     return;
                 }
-                showSettingsStatus('✓ Сохранено', true);
+                // Показываем успех на кнопке
+                el.cfgSaveBtn.textContent = 'Сохранено ✓';
+                setTimeout(function () {
+                    el.cfgSaveBtn.textContent = originalText;
+                    el.cfgSaveBtn.disabled = false;
+                }, 2000);
+                
+                showSettingsStatus('✓ Настройки успешно сохранены!', true);
+                showToast('Настройки успешно сохранены!');
                 loadConfig();
             })
             .catch(function () {
+                el.cfgSaveBtn.textContent = originalText;
+                el.cfgSaveBtn.disabled = false;
                 showSettingsStatus('Не удалось сохранить настройки. Проверьте соединение.', false);
             });
+    }
+
+    function showToast(message) {
+        var toast = document.createElement('div');
+        toast.className = 'toast-banner';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(function () {
+            toast.classList.add('show');
+        }, 10);
+        
+        setTimeout(function () {
+            toast.classList.remove('show');
+            setTimeout(function () {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
     }
 
     function showSettingsStatus(message, ok) {
