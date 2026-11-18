@@ -23,6 +23,19 @@
         hasMore: false
     };
 
+    var clientsState = {
+        search: '',
+        offset: 0,
+        total: 0,
+        items: [],
+        loading: false,
+        hasMore: false,
+        loaded: false
+    };
+
+    var settingsLoaded = false;
+    var notificationsLoaded = false;
+
     var el = {};
 
     document.addEventListener('DOMContentLoaded', init);
@@ -41,6 +54,48 @@
         el.lightbox = document.getElementById('lightbox');
         el.lightboxImg = document.getElementById('lightboxImg');
         el.lightboxClose = document.getElementById('lightboxClose');
+        el.adminTabs = document.getElementById('adminTabs');
+        el.clientSearch = document.getElementById('clientSearch');
+        el.clientsSummary = document.getElementById('clientsSummary');
+        el.clientsList = document.getElementById('clientsList');
+        el.clientsEmpty = document.getElementById('clientsEmpty');
+        el.clientsLoadMore = document.getElementById('clientsLoadMore');
+        el.exportClientsCsv = document.getElementById('exportClientsCsv');
+        el.cfgCompanyName = document.getElementById('cfgCompanyName');
+        el.cfgTitle = document.getElementById('cfgTitle');
+        el.cfgSubtitle = document.getElementById('cfgSubtitle');
+        el.cfgColorPrimary = document.getElementById('cfgColorPrimary');
+        el.cfgColorPrimaryHex = document.getElementById('cfgColorPrimaryHex');
+        el.cfgColorAccent = document.getElementById('cfgColorAccent');
+        el.cfgColorAccentHex = document.getElementById('cfgColorAccentHex');
+        el.cfgPhone = document.getElementById('cfgPhone');
+        el.cfgTelegram = document.getElementById('cfgTelegram');
+        el.cfgWhatsapp = document.getElementById('cfgWhatsapp');
+        el.cfgMax = document.getElementById('cfgMax');
+        el.cfgLogoPreview = document.getElementById('cfgLogoPreview');
+        el.cfgLogoFile = document.getElementById('cfgLogoFile');
+        el.cfgLogoUpload = document.getElementById('cfgLogoUpload');
+        el.cfgLogoDelete = document.getElementById('cfgLogoDelete');
+        el.cfgServicesList = document.getElementById('cfgServicesList');
+        el.cfgAddService = document.getElementById('cfgAddService');
+        el.cfgSaveBtn = document.getElementById('cfgSaveBtn');
+        el.cfgSaveStatus = document.getElementById('cfgSaveStatus');
+        el.notifTelegram = document.getElementById('notifTelegram');
+        el.notifMax = document.getElementById('notifMax');
+        el.notifWhatsapp = document.getElementById('notifWhatsapp');
+        el.testTelegram = document.getElementById('testTelegram');
+        el.testMax = document.getElementById('testMax');
+        el.testWhatsapp = document.getElementById('testWhatsapp');
+        el.testTelegramStatus = document.getElementById('testTelegramStatus');
+        el.testMaxStatus = document.getElementById('testMaxStatus');
+        el.testWhatsappStatus = document.getElementById('testWhatsappStatus');
+        el.saveNotifBtn = document.getElementById('saveNotifBtn');
+        el.saveNotifStatus = document.getElementById('saveNotifStatus');
+        el.currentPassword = document.getElementById('currentPassword');
+        el.newPassword = document.getElementById('newPassword');
+        el.confirmPassword = document.getElementById('confirmPassword');
+        el.changePasswordBtn = document.getElementById('changePasswordBtn');
+        el.passwordStatus = document.getElementById('passwordStatus');
 
         el.searchInput.addEventListener('input', debounce(onSearchChange, 400));
         el.logoutBtn.addEventListener('click', onLogout);
@@ -51,6 +106,24 @@
                 closeLightbox();
             }
         });
+
+        el.adminTabs.addEventListener('click', onTabClick);
+        el.clientSearch.addEventListener('input', debounce(onClientSearch, 400));
+        el.clientsLoadMore.addEventListener('click', loadClients);
+        el.exportClientsCsv.addEventListener('click', exportClientsCsv);
+        el.cfgAddService.addEventListener('click', function () {
+            addServiceRow(null);
+        });
+        el.cfgLogoUpload.addEventListener('click', onLogoUpload);
+        el.cfgLogoDelete.addEventListener('click', onLogoDelete);
+        el.cfgSaveBtn.addEventListener('click', onSaveSettings);
+        el.saveNotifBtn.addEventListener('click', onSaveNotifications);
+        el.changePasswordBtn.addEventListener('click', onChangePassword);
+        el.testTelegram.addEventListener('click', function () { sendTestNotification('telegram'); });
+        el.testMax.addEventListener('click', function () { sendTestNotification('max'); });
+        el.testWhatsapp.addEventListener('click', function () { sendTestNotification('whatsapp'); });
+        setupColorSync();
+        setupAdminPhoneMask();
 
         renderStatusTabs();
         loadConfig();
@@ -914,5 +987,780 @@
     function hideAppError() {
         el.appError.textContent = '';
         el.appError.hidden = true;
+    }
+
+    // ---------- Навигация по вкладкам ----------
+
+    function onTabClick(event) {
+        var btn = event.target.closest('.admin-tab');
+        if (!btn) {
+            return;
+        }
+        activateTab(btn.getAttribute('data-tab') || 'requests');
+    }
+
+    function activateTab(name) {
+        var tabs = el.adminTabs.querySelectorAll('.admin-tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.toggle('is-active', tabs[i].getAttribute('data-tab') === name);
+        }
+
+        var sectionId = 'tab' + name.charAt(0).toUpperCase() + name.slice(1);
+        var sections = document.querySelectorAll('.tab-content');
+        for (var j = 0; j < sections.length; j++) {
+            sections[j].hidden = (sections[j].id !== sectionId);
+        }
+
+        if (name === 'clients' && !clientsState.loaded) {
+            clientsState.loaded = true;
+            loadClients();
+        }
+        if (name === 'settings' && !settingsLoaded) {
+            settingsLoaded = true;
+            loadSettings();
+        }
+        if (name === 'notifications' && !notificationsLoaded) {
+            notificationsLoaded = true;
+            loadNotifications();
+        }
+    }
+
+    // ---------- Вкладка «Заказчики» ----------
+
+    function onClientSearch() {
+        clientsState.search = str(el.clientSearch.value);
+        resetClients();
+    }
+
+    function resetClients() {
+        clientsState.offset = 0;
+        clientsState.items = [];
+        clientsState.total = 0;
+        clientsState.hasMore = false;
+        el.clientsList.innerHTML = '';
+        el.clientsEmpty.hidden = true;
+        el.clientsSummary.hidden = true;
+        loadClients();
+    }
+
+    function loadClients() {
+        if (clientsState.loading) {
+            return;
+        }
+        clientsState.loading = true;
+        el.clientsLoadMore.hidden = true;
+
+        var params = new URLSearchParams();
+        params.set('limit', String(PAGE_LIMIT));
+        params.set('offset', String(clientsState.offset));
+        if (clientsState.search) {
+            params.set('search', clientsState.search);
+        }
+
+        fetch('/api/admin/clients?' + params.toString(), {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                clientsState.loading = false;
+
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+
+                if (!result.data || result.data.ok !== true) {
+                    el.clientsEmpty.textContent = (result.data && result.data.error) || 'Не удалось загрузить клиентов.';
+                    el.clientsEmpty.hidden = false;
+                    return;
+                }
+
+                var items = Array.isArray(result.data.items) ? result.data.items : [];
+                clientsState.total = Number(result.data.total) || 0;
+
+                if (clientsState.offset === 0) {
+                    clientsState.items = items;
+                } else {
+                    clientsState.items = clientsState.items.concat(items);
+                }
+
+                clientsState.offset = clientsState.items.length;
+                clientsState.hasMore = clientsState.items.length < clientsState.total;
+
+                renderClients();
+            })
+            .catch(function () {
+                clientsState.loading = false;
+                el.clientsEmpty.textContent = 'Не удалось загрузить клиентов. Проверьте соединение.';
+                el.clientsEmpty.hidden = false;
+            });
+    }
+
+    function renderClients() {
+        el.clientsList.innerHTML = '';
+
+        if (clientsState.items.length === 0) {
+            el.clientsEmpty.textContent = 'Клиентов не найдено.';
+            el.clientsEmpty.hidden = false;
+            el.clientsSummary.hidden = true;
+            el.clientsLoadMore.hidden = true;
+            return;
+        }
+
+        el.clientsEmpty.hidden = true;
+        el.clientsSummary.hidden = false;
+        el.clientsSummary.textContent = 'Клиентов: ' + clientsState.total;
+
+        for (var i = 0; i < clientsState.items.length; i++) {
+            el.clientsList.appendChild(buildClientCard(clientsState.items[i]));
+        }
+
+        el.clientsLoadMore.hidden = !clientsState.hasMore;
+    }
+
+    function buildClientCard(client) {
+        var card = document.createElement('article');
+        card.className = 'client-card';
+
+        var top = document.createElement('div');
+        top.className = 'client-top';
+
+        var name = document.createElement('div');
+        name.className = 'client-name';
+        name.textContent = client.name || 'Без имени';
+        top.appendChild(name);
+
+        var phone = document.createElement('a');
+        phone.className = 'client-phone';
+        phone.href = 'tel:' + phoneForTel(client.phone);
+        phone.textContent = client.phone;
+        top.appendChild(phone);
+
+        card.appendChild(top);
+
+        var stats = document.createElement('div');
+        stats.className = 'client-stats';
+
+        var count = document.createElement('div');
+        count.textContent = 'Обращений: ' + (client.requestCount || 0);
+        stats.appendChild(count);
+
+        var spent = document.createElement('div');
+        spent.textContent = 'Сумма: ' + formatPrice(client.totalSpent) + ' ₽';
+        stats.appendChild(spent);
+
+        card.appendChild(stats);
+
+        var dates = document.createElement('div');
+        dates.className = 'client-dates';
+
+        var first = document.createElement('div');
+        first.textContent = 'Первое: ' + formatDate(client.firstRequestAt);
+        dates.appendChild(first);
+
+        var last = document.createElement('div');
+        last.textContent = 'Последнее: ' + formatDate(client.lastRequestAt);
+        dates.appendChild(last);
+
+        card.appendChild(dates);
+        card.appendChild(buildMessengerLinks({ phone: client.phone }));
+
+        return card;
+    }
+
+    function exportClientsCsv() {
+        var headers = ['Телефон', 'Имя', 'Кол-во заявок', 'Сумма', 'Первое обращение', 'Последнее обращение'];
+        var rows = [headers.join(';')];
+
+        for (var i = 0; i < clientsState.items.length; i++) {
+            var c = clientsState.items[i];
+            rows.push([
+                c.phone,
+                c.name,
+                c.requestCount,
+                c.totalSpent,
+                c.firstRequestAt,
+                c.lastRequestAt
+            ].map(csvCell).join(';'));
+        }
+
+        var csv = '\uFEFF' + rows.join('\r\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'clients.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ---------- Вкладка «Настройки витрины» ----------
+
+    // Убирает из строки всё, кроме цифр
+    function extractDigits(value) {
+        return String(value === undefined || value === null ? '' : value).replace(/\D/g, '');
+    }
+
+    // Позиция курсора после указанного количества цифр в отформатированной строке
+    function findCaretForDigits(formatted, digitCount) {
+        var seen = 0;
+        for (var i = 0; i < formatted.length; i++) {
+            if (/\d/.test(formatted[i])) {
+                if (seen === digitCount) {
+                    return i;
+                }
+                seen++;
+            }
+        }
+        return formatted.length;
+    }
+
+    // Форматирует строку из цифр в прогрессивную маску +7 (XXX) XXX-XX-XX
+    function formatPhoneMask(rawDigits) {
+        var digits = extractDigits(rawDigits);
+        if (!digits) {
+            return '';
+        }
+
+        // 8 → 7; 9 или любая другая цифра (кроме 7) → добавляем 7 в начало
+        if (digits[0] === '8') {
+            digits = '7' + digits.slice(1);
+        } else if (digits[0] !== '7') {
+            digits = '7' + digits;
+        }
+
+        // Ограничиваем длину 11 цифрами (максимум для российского номера)
+        digits = digits.slice(0, 11);
+
+        var rest = digits.slice(1);
+        var result = '+7';
+        if (rest.length === 0) {
+            return result;
+        }
+
+        result += ' (' + rest.slice(0, 3);
+        if (rest.length > 3) {
+            result += ') ' + rest.slice(3, 6);
+        }
+        if (rest.length > 6) {
+            result += '-' + rest.slice(6, 8);
+        }
+        if (rest.length > 8) {
+            result += '-' + rest.slice(8, 10);
+        }
+        return result;
+    }
+
+    function onCfgPhoneInput() {
+        var value = el.cfgPhone.value;
+        var caret = el.cfgPhone.selectionStart;
+        var digitsBeforeCaret = extractDigits(value.slice(0, caret)).length;
+
+        var rawDigits = extractDigits(value);
+        // Если ввод начался не с 7 и не с 8, форматтер добавит ведущую 7 —
+        // учитываем её, чтобы курсор остался после тех же введённых цифр.
+        var addsLeadingSeven = Boolean(rawDigits && rawDigits[0] !== '7' && rawDigits[0] !== '8');
+
+        var formatted = formatPhoneMask(value);
+        el.cfgPhone.value = formatted;
+
+        var targetDigits = digitsBeforeCaret + (addsLeadingSeven ? 1 : 0);
+        var newCaret = findCaretForDigits(formatted, targetDigits);
+        el.cfgPhone.setSelectionRange(newCaret, newCaret);
+    }
+
+    function onCfgPhonePaste(event) {
+        event.preventDefault();
+        var text = '';
+        try {
+            text = (event.clipboardData || window.clipboardData).getData('text');
+        } catch (e) {
+            // Игнорируем недоступный буфер обмена
+        }
+        el.cfgPhone.value = formatPhoneMask(text);
+        var end = el.cfgPhone.value.length;
+        el.cfgPhone.setSelectionRange(end, end);
+    }
+
+    function onCfgPhoneFocus() {
+        if (!el.cfgPhone.value) {
+            el.cfgPhone.value = '+7 (';
+        }
+    }
+
+    function onCfgPhoneBlur() {
+        var value = el.cfgPhone.value.trim();
+        if (value === '+7 (' || value === '+7') {
+            el.cfgPhone.value = '';
+        }
+    }
+
+    function setupAdminPhoneMask() {
+        el.cfgPhone.addEventListener('input', onCfgPhoneInput);
+        el.cfgPhone.addEventListener('paste', onCfgPhonePaste);
+        el.cfgPhone.addEventListener('focus', onCfgPhoneFocus);
+        el.cfgPhone.addEventListener('blur', onCfgPhoneBlur);
+    }
+
+    function loadSettings() {
+        fetch('/api/admin/config', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    showSettingsStatus('Не удалось загрузить настройки.', false);
+                    return;
+                }
+                fillSettingsForm(result.data.config);
+            })
+            .catch(function () {
+                showSettingsStatus('Не удалось загрузить настройки.', false);
+            });
+    }
+
+    function fillSettingsForm(config) {
+        var cfg = config || {};
+
+        el.cfgCompanyName.value = cfg.companyName || '';
+        el.cfgTitle.value = cfg.title || '';
+        el.cfgSubtitle.value = cfg.subtitle || '';
+
+        var colors = (cfg.colors && typeof cfg.colors === 'object') ? cfg.colors : {};
+        var primary = colors.primary || '#319795';
+        var accent = colors.accent || '#4fd1c5';
+
+        el.cfgColorPrimaryHex.value = primary;
+        el.cfgColorAccentHex.value = accent;
+        el.cfgColorPrimary.value = normalizeHexForColorInput(primary);
+        el.cfgColorAccent.value = normalizeHexForColorInput(accent);
+
+        var contacts = (cfg.contacts && typeof cfg.contacts === 'object') ? cfg.contacts : {};
+        el.cfgPhone.value = contacts.phone || '';
+        el.cfgTelegram.value = contacts.telegram || '';
+        el.cfgWhatsapp.value = contacts.whatsapp || '';
+        el.cfgMax.value = contacts.max || '';
+
+        renderServiceRows(cfg.services || []);
+        updateLogoPreview();
+    }
+
+    function normalizeHexForColorInput(value) {
+        var v = str(value);
+        if (/^#([0-9a-fA-F]{3})$/.test(v)) {
+            return '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+        }
+        if (COLOR_RE.test(v)) {
+            return v;
+        }
+        return '#000000';
+    }
+
+    function setupColorSync() {
+        syncColorPair(el.cfgColorPrimary, el.cfgColorPrimaryHex);
+        syncColorPair(el.cfgColorAccent, el.cfgColorAccentHex);
+    }
+
+    function syncColorPair(colorInput, hexInput) {
+        colorInput.addEventListener('input', function () {
+            hexInput.value = colorInput.value;
+        });
+        hexInput.addEventListener('input', function () {
+            var v = str(hexInput.value);
+            if (COLOR_RE.test(v)) {
+                colorInput.value = normalizeHexForColorInput(v);
+            }
+        });
+    }
+
+    function renderServiceRows(services) {
+        el.cfgServicesList.innerHTML = '';
+        var list = Array.isArray(services) ? services : [];
+        for (var i = 0; i < list.length; i++) {
+            addServiceRow(list[i]);
+        }
+    }
+
+    function addServiceRow(service) {
+        var row = document.createElement('div');
+        row.className = 'service-row';
+
+        var nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'service-name';
+        nameInput.placeholder = 'Название услуги';
+        nameInput.value = (service && service.name) ? service.name : '';
+
+        var priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.className = 'service-price';
+        priceInput.placeholder = 'Цена от, ₽';
+        priceInput.min = '0';
+        priceInput.step = '1';
+        priceInput.value = (service && service.priceFrom !== undefined && service.priceFrom !== null)
+            ? String(service.priceFrom)
+            : '';
+
+        var removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'service-remove-btn';
+        removeBtn.textContent = 'Удалить';
+        removeBtn.addEventListener('click', function () {
+            row.remove();
+        });
+
+        row.appendChild(nameInput);
+        row.appendChild(priceInput);
+        row.appendChild(removeBtn);
+        el.cfgServicesList.appendChild(row);
+    }
+
+    function updateLogoPreview() {
+        el.cfgLogoPreview.onerror = function () {
+            el.cfgLogoPreview.hidden = true;
+        };
+        el.cfgLogoPreview.hidden = false;
+        el.cfgLogoPreview.src = '/api/logo?t=' + Date.now();
+    }
+
+    function onLogoUpload() {
+        var file = el.cfgLogoFile.files && el.cfgLogoFile.files[0];
+        if (!file) {
+            showSettingsStatus('Выберите файл логотипа.', false);
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('logo', file);
+
+        fetch('/api/admin/logo', {
+            method: 'POST',
+            body: formData
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    showSettingsStatus((result.data && result.data.error) || 'Не удалось загрузить логотип.', false);
+                    return;
+                }
+                el.cfgLogoFile.value = '';
+                updateLogoPreview();
+                showSettingsStatus('✓ Логотип обновлён', true);
+            })
+            .catch(function () {
+                showSettingsStatus('Не удалось загрузить логотип. Проверьте соединение.', false);
+            });
+    }
+
+    function onLogoDelete() {
+        fetch('/api/admin/logo/delete', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    showSettingsStatus((result.data && result.data.error) || 'Не удалось удалить логотип.', false);
+                    return;
+                }
+                el.cfgLogoPreview.hidden = true;
+                el.cfgLogoPreview.removeAttribute('src');
+                showSettingsStatus('✓ Логотип удалён', true);
+            })
+            .catch(function () {
+                showSettingsStatus('Не удалось удалить логотип. Проверьте соединение.', false);
+            });
+    }
+
+    function onSaveSettings() {
+        var services = [];
+        var rows = el.cfgServicesList.querySelectorAll('.service-row');
+
+        for (var i = 0; i < rows.length; i++) {
+            var nameInput = rows[i].querySelector('.service-name');
+            var priceInput = rows[i].querySelector('.service-price');
+            var name = str(nameInput.value);
+            var priceRaw = str(priceInput.value);
+
+            if (name === '' && priceRaw === '') {
+                continue;
+            }
+
+            services.push({
+                name: name,
+                priceFrom: priceRaw === '' ? 0 : Number(priceRaw)
+            });
+        }
+
+        var payload = {
+            companyName: el.cfgCompanyName.value,
+            title: el.cfgTitle.value,
+            subtitle: el.cfgSubtitle.value,
+            colors: {
+                primary: el.cfgColorPrimaryHex.value,
+                accent: el.cfgColorAccentHex.value
+            },
+            contacts: {
+                phone: el.cfgPhone.value,
+                telegram: el.cfgTelegram.value,
+                whatsapp: el.cfgWhatsapp.value,
+                max: el.cfgMax.value
+            },
+            services: services
+        };
+
+        fetch('/api/admin/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    showSettingsStatus((result.data && result.data.error) || 'Не удалось сохранить настройки.', false);
+                    return;
+                }
+                showSettingsStatus('✓ Сохранено', true);
+                loadConfig();
+            })
+            .catch(function () {
+                showSettingsStatus('Не удалось сохранить настройки. Проверьте соединение.', false);
+            });
+    }
+
+    function showSettingsStatus(message, ok) {
+        el.cfgSaveStatus.textContent = message;
+        el.cfgSaveStatus.className = 'save-status ' + (ok ? 'ok' : 'fail');
+        if (ok) {
+            setTimeout(function () {
+                el.cfgSaveStatus.textContent = '';
+            }, 3000);
+        }
+    }
+
+    // ---------- Вкладка «Уведомления и доступ» ----------
+
+    function loadNotifications() {
+        fetch('/api/admin/config', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    return;
+                }
+                var notifications = (result.data.config && result.data.config.notifications) || {};
+                el.notifTelegram.checked = notifications.telegram === true;
+                el.notifMax.checked = notifications.max === true;
+                el.notifWhatsapp.checked = notifications.whatsapp === true;
+            })
+            .catch(function () {
+                // Не критично: чекбоксы останутся в состоянии по умолчанию.
+            });
+    }
+
+    function onSaveNotifications() {
+        var payload = {
+            telegram: el.notifTelegram.checked,
+            max: el.notifMax.checked,
+            whatsapp: el.notifWhatsapp.checked
+        };
+
+        fetch('/api/admin/config/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    showNotifStatus((result.data && result.data.error) || 'Не удалось сохранить настройки.', false);
+                    return;
+                }
+                showNotifStatus('✓ Сохранено', true);
+            })
+            .catch(function () {
+                showNotifStatus('Не удалось сохранить настройки. Проверьте соединение.', false);
+            });
+    }
+
+    function showNotifStatus(message, ok) {
+        el.saveNotifStatus.textContent = message;
+        el.saveNotifStatus.className = 'save-status ' + (ok ? 'ok' : 'fail');
+        if (ok) {
+            setTimeout(function () {
+                el.saveNotifStatus.textContent = '';
+            }, 3000);
+        }
+    }
+
+    function sendTestNotification(channel) {
+        var statusEl = channel === 'telegram' ? el.testTelegramStatus
+            : channel === 'max' ? el.testMaxStatus : el.testWhatsappStatus;
+
+        statusEl.textContent = 'Отправка…';
+        statusEl.className = 'test-status';
+
+        fetch('/api/admin/notifications/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel: channel })
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (result.data && result.data.ok === true) {
+                    statusEl.textContent = '✓ Отправлено';
+                    statusEl.className = 'test-status ok';
+                } else {
+                    statusEl.textContent = (result.data && result.data.error) || 'Не удалось отправить тест.';
+                    statusEl.className = 'test-status fail';
+                }
+            })
+            .catch(function () {
+                statusEl.textContent = 'Не удалось отправить тест. Проверьте соединение.';
+                statusEl.className = 'test-status fail';
+            });
+    }
+
+    function onChangePassword() {
+        var currentPassword = el.currentPassword.value;
+        var newPassword = el.newPassword.value;
+        var confirmPassword = el.confirmPassword.value;
+
+        if (newPassword !== confirmPassword) {
+            showPasswordStatus('Пароли не совпадают.', false);
+            return;
+        }
+        if (newPassword.length < 6) {
+            showPasswordStatus('Новый пароль должен быть не короче 6 символов.', false);
+            return;
+        }
+
+        fetch('/api/admin/password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            })
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Не удалось обработать ответ сервера.' };
+                }).then(function (data) {
+                    return { status: response.status, data: data };
+                });
+            })
+            .then(function (result) {
+                if (result.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                if (!result.data || result.data.ok !== true) {
+                    showPasswordStatus((result.data && result.data.error) || 'Не удалось сменить пароль.', false);
+                    return;
+                }
+                el.currentPassword.value = '';
+                el.newPassword.value = '';
+                el.confirmPassword.value = '';
+                showPasswordStatus('✓ Пароль изменён', true);
+            })
+            .catch(function () {
+                showPasswordStatus('Не удалось сменить пароль. Проверьте соединение.', false);
+            });
+    }
+
+    function showPasswordStatus(message, ok) {
+        el.passwordStatus.textContent = message;
+        el.passwordStatus.className = 'save-status ' + (ok ? 'ok' : 'fail');
+        if (ok) {
+            setTimeout(function () {
+                el.passwordStatus.textContent = '';
+            }, 3000);
+        }
     }
 })();

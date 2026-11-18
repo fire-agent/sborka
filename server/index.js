@@ -9,7 +9,7 @@ const path = require('node:path');
 const db = require('./db');
 const { createRequestsHandler } = require('./requests');
 const { createAuthManager } = require('./auth');
-const { getNotificationsConfig, notifyNewRequest } = require('./notifier');
+const { getNotificationsConfig, notifyNewRequest, sendTelegram, sendMAX, sendWhatsApp } = require('./notifier');
 const { parseMultipart } = require('./multipart');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -421,6 +421,177 @@ function readJsonBody(req) {
     });
 }
 
+// ---------- Конфигурация витрины (config.json) ----------
+
+const CONFIG_COLOR_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+function cleanConfigString(value, label, maxLength, allowEmpty) {
+    if (typeof value !== 'string') {
+        throw new Error(label + ' должен быть строкой');
+    }
+    const s = value.trim();
+    if (!allowEmpty && s === '') {
+        throw new Error(label + ' не должен быть пустым');
+    }
+    if (s.length > maxLength) {
+        throw new Error(label + ' не должен быть длиннее ' + maxLength + ' символов');
+    }
+    return s;
+}
+
+function cleanConfigUrl(value, label) {
+    const s = cleanConfigString(value, label, 200, true);
+    if (s !== '' && !/^https:\/\//i.test(s)) {
+        throw new Error(label + ' должен начинаться с https://');
+    }
+    return s;
+}
+
+function cleanConfigPrice(value, label) {
+    if (value === undefined || value === null || value === '') {
+        return 0;
+    }
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 0) {
+        throw new Error(label + ' должен быть целым числом не меньше 0');
+    }
+    return n;
+}
+
+function readConfigFile() {
+    const raw = fs.readFileSync(configPath, 'utf8');
+    return JSON.parse(raw);
+}
+
+// Обновляет строку ADMIN_PASSWORD в файле .env, не трогая остальные значения.
+function updateEnvPassword(newPassword) {
+    const envPath = path.join(ROOT_DIR, '.env');
+    let content = '';
+    if (fs.existsSync(envPath)) {
+        content = fs.readFileSync(envPath, 'utf8');
+    }
+    const lines = content.split(/\r?\n/);
+    let replaced = false;
+    for (let i = 0; i < lines.length; i++) {
+        if (/^\s*ADMIN_PASSWORD\s*=/.test(lines[i])) {
+            lines[i] = 'ADMIN_PASSWORD=' + newPassword;
+            replaced = true;
+            break;
+        }
+    }
+    if (!replaced) {
+        if (content && !/\n$/.test(content)) {
+            lines.push('');
+        }
+        lines.push('ADMIN_PASSWORD=' + newPassword);
+    }
+    fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf8');
+}
+
+// Смерживает валидированные поля из input с текущим конфигом.
+function mergeConfig(current, input) {
+    const base = (current && typeof current === 'object' && !Array.isArray(current)) ? current : {};
+
+    const out = {
+        companyName: base.companyName || '',
+        title: base.title || '',
+        subtitle: base.subtitle || '',
+        colors: {
+            primary: (base.colors && base.colors.primary) || '#319795',
+            accent: (base.colors && base.colors.accent) || '#4fd1c5'
+        },
+        contacts: {
+            phone: (base.contacts && base.contacts.phone) || '',
+            telegram: (base.contacts && base.contacts.telegram) || '',
+            whatsapp: (base.contacts && base.contacts.whatsapp) || '',
+            max: (base.contacts && base.contacts.max) || ''
+        },
+        services: Array.isArray(base.services) ? base.services.map(function (s) {
+            return {
+                name: (s && s.name) ? String(s.name) : '',
+                priceFrom: (s && s.priceFrom !== undefined) ? s.priceFrom : 0
+            };
+        }) : [],
+        notifications: (base.notifications && typeof base.notifications === 'object')
+            ? Object.assign({}, base.notifications)
+            : { telegram: true, max: false, whatsapp: false }
+    };
+
+    if (input.companyName !== undefined) {
+        out.companyName = cleanConfigString(input.companyName, 'Название компании', 100, false);
+    }
+    if (input.title !== undefined) {
+        out.title = cleanConfigString(input.title, 'Заголовок', 200, true);
+    }
+    if (input.subtitle !== undefined) {
+        out.subtitle = cleanConfigString(input.subtitle, 'Подзаголовок', 500, true);
+    }
+
+    if (input.colors && typeof input.colors === 'object' && !Array.isArray(input.colors)) {
+        if (input.colors.primary !== undefined) {
+            const v = cleanConfigString(input.colors.primary, 'Основной цвет', 7, false);
+            if (!CONFIG_COLOR_RE.test(v)) {
+                throw new Error('Основной цвет должен быть в формате #RRGGBB');
+            }
+            out.colors.primary = v;
+        }
+        if (input.colors.accent !== undefined) {
+            const v = cleanConfigString(input.colors.accent, 'Акцентный цвет', 7, false);
+            if (!CONFIG_COLOR_RE.test(v)) {
+                throw new Error('Акцентный цвет должен быть в формате #RRGGBB');
+            }
+            out.colors.accent = v;
+        }
+    }
+
+    if (input.contacts && typeof input.contacts === 'object' && !Array.isArray(input.contacts)) {
+        if (input.contacts.phone !== undefined) {
+            out.contacts.phone = cleanConfigString(input.contacts.phone, 'Телефон', 30, true);
+        }
+        if (input.contacts.telegram !== undefined) {
+            out.contacts.telegram = cleanConfigUrl(input.contacts.telegram, 'Telegram');
+        }
+        if (input.contacts.whatsapp !== undefined) {
+            out.contacts.whatsapp = cleanConfigUrl(input.contacts.whatsapp, 'WhatsApp');
+        }
+        if (input.contacts.max !== undefined) {
+            out.contacts.max = cleanConfigUrl(input.contacts.max, 'MAX');
+        }
+    }
+
+    if (input.services !== undefined) {
+        if (!Array.isArray(input.services)) {
+            throw new Error('Услуги должны быть массивом');
+        }
+        if (input.services.length > 30) {
+            throw new Error('Не больше 30 услуг');
+        }
+        out.services = input.services.map(function (s, i) {
+            const label = 'Услуга №' + (i + 1);
+            if (!s || typeof s !== 'object' || Array.isArray(s)) {
+                throw new Error(label + ' заполнена неверно');
+            }
+            return {
+                name: cleanConfigString(s.name, label + ': название', 100, false),
+                priceFrom: cleanConfigPrice(s.priceFrom, label + ': цена')
+            };
+        });
+    }
+
+    return out;
+}
+
+// Понятный текст ошибки для тестовой отправки, если канал не настроен.
+function testChannelError(reason) {
+    if (reason === 'no_token' || reason === 'no_id_instance') {
+        return 'Канал не настроен: не задан токен в файле .env.';
+    }
+    if (reason === 'no_chat_id') {
+        return 'Канал не настроен: не задан ID чата в файле .env.';
+    }
+    return 'Не удалось отправить тестовое сообщение.';
+}
+
 // ---------- Маршрутизация ----------
 
 async function handleRequest(req, res) {
@@ -561,6 +732,154 @@ async function handleRequest(req, res) {
             sendJson(res, 200, { ok: true, items: items, total: total });
         } catch (e) {
             sendJson(res, 400, { ok: false, error: e.message });
+        }
+        return;
+    }
+
+    if (pathname === '/api/admin/config') {
+        if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'POST') {
+            sendJson(res, 405, { ok: false, error: 'Метод не поддерживается' });
+            return;
+        }
+        if (!auth.checkSession(req)) {
+            sendJson(res, 401, { ok: false, error: 'Необходима авторизация' });
+            return;
+        }
+
+        if (req.method === 'POST') {
+            const body = await readJsonBody(req);
+            if (!body || typeof body !== 'object' || Array.isArray(body)) {
+                sendJson(res, 400, { ok: false, error: 'Неверный формат данных' });
+                return;
+            }
+            try {
+                const current = readConfigFile();
+                const next = mergeConfig(current, body);
+                fs.writeFileSync(configPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+                sendJson(res, 200, { ok: true });
+            } catch (e) {
+                sendJson(res, 400, { ok: false, error: e.message });
+            }
+            return;
+        }
+
+        try {
+            const config = readConfigFile();
+            sendJson(res, 200, { ok: true, config: config });
+        } catch (e) {
+            console.error('Ошибка чтения config.json:', e);
+            sendJson(res, 500, { ok: false, error: 'Не удалось прочитать config.json' });
+        }
+        return;
+    }
+
+    if (pathname === '/api/admin/notifications/test') {
+        if (req.method !== 'POST') {
+            sendJson(res, 405, { ok: false, error: 'Метод не поддерживается' });
+            return;
+        }
+        if (!auth.checkSession(req)) {
+            sendJson(res, 401, { ok: false, error: 'Необходима авторизация' });
+            return;
+        }
+        const body = await readJsonBody(req);
+        const channel = (body && typeof body.channel === 'string') ? body.channel.trim().toLowerCase() : '';
+        if (channel !== 'telegram' && channel !== 'max' && channel !== 'whatsapp') {
+            sendJson(res, 400, { ok: false, error: 'Укажите корректный канал: telegram, max или whatsapp.' });
+            return;
+        }
+
+        const notifConfig = getNotificationsConfig(configPath);
+        const message = '🔔 Тестовое уведомление из кабинета администратора';
+
+        let result;
+        try {
+            if (channel === 'telegram') {
+                result = await sendTelegram(notifConfig.telegram.botToken, notifConfig.telegram.chatId, message);
+            } else if (channel === 'max') {
+                result = await sendMAX(notifConfig.max.botToken, notifConfig.max.chatId, message);
+            } else {
+                result = await sendWhatsApp(
+                    notifConfig.whatsapp.apiUrl,
+                    notifConfig.whatsapp.idInstance,
+                    notifConfig.whatsapp.apiTokenInstance,
+                    notifConfig.whatsapp.chatId,
+                    message
+                );
+            }
+        } catch (e) {
+            result = { ok: false, error: e.message };
+        }
+
+        if (result && result.ok) {
+            sendJson(res, 200, { ok: true });
+        } else {
+            const reason = result && result.reason;
+            const error = (result && result.error)
+                ? result.error
+                : (reason ? testChannelError(reason) : 'Не удалось отправить тестовое сообщение.');
+            sendJson(res, 502, { ok: false, error: error });
+        }
+        return;
+    }
+
+    if (pathname === '/api/admin/config/notifications') {
+        if (req.method !== 'POST') {
+            sendJson(res, 405, { ok: false, error: 'Метод не поддерживается' });
+            return;
+        }
+        if (!auth.checkSession(req)) {
+            sendJson(res, 401, { ok: false, error: 'Необходима авторизация' });
+            return;
+        }
+        const body = await readJsonBody(req);
+        if (!body || typeof body !== 'object' || Array.isArray(body)) {
+            sendJson(res, 400, { ok: false, error: 'Неверный формат данных' });
+            return;
+        }
+        try {
+            const current = readConfigFile();
+            current.notifications = {
+                telegram: body.telegram === true,
+                max: body.max === true,
+                whatsapp: body.whatsapp === true
+            };
+            fs.writeFileSync(configPath, JSON.stringify(current, null, 2) + '\n', 'utf8');
+            sendJson(res, 200, { ok: true });
+        } catch (e) {
+            sendJson(res, 400, { ok: false, error: e.message });
+        }
+        return;
+    }
+
+    if (pathname === '/api/admin/password') {
+        if (req.method !== 'POST') {
+            sendJson(res, 405, { ok: false, error: 'Метод не поддерживается' });
+            return;
+        }
+        if (!auth.checkSession(req)) {
+            sendJson(res, 401, { ok: false, error: 'Необходима авторизация' });
+            return;
+        }
+        const body = await readJsonBody(req);
+        const currentPassword = (body && typeof body.currentPassword === 'string') ? body.currentPassword : '';
+        const newPassword = (body && typeof body.newPassword === 'string') ? body.newPassword : '';
+
+        if (!auth.verifyPassword(currentPassword)) {
+            sendJson(res, 401, { ok: false, error: 'Неверный текущий пароль.' });
+            return;
+        }
+        if (newPassword.length < 6 || newPassword.length > 100) {
+            sendJson(res, 400, { ok: false, error: 'Новый пароль должен быть от 6 до 100 символов.' });
+            return;
+        }
+        try {
+            updateEnvPassword(newPassword);
+            auth.setPassword(newPassword);
+            sendJson(res, 200, { ok: true });
+        } catch (e) {
+            console.error('Ошибка смены пароля:', e);
+            sendJson(res, 500, { ok: false, error: 'Не удалось обновить файл .env.' });
         }
         return;
     }

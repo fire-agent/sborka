@@ -131,20 +131,20 @@ async function sendTelegram(botToken, chatId, text) {
                     }
                 } catch (e) {
                     console.error('Telegram: ✗ не удалось распарсить ответ API');
-                    resolve({ ok: false, error: 'bad_response' });
+                    resolve({ ok: false, error: 'Не удалось разобрать ответ API Telegram.' });
                 }
             });
         });
         req.on('error', function (e) {
             console.error('Telegram: ✗ сетевая ошибка — ' + e.message);
-            resolve({ ok: false, error: e.message });
+            resolve({ ok: false, error: 'Сетевая ошибка при отправке сообщения в Telegram.' });
         });
         req.on('timeout', function () {
             req.destroy();
             console.error('Telegram: ✗ таймаут запроса');
-            resolve({ ok: false, error: 'timeout' });
+            resolve({ ok: false, error: 'Превышено время ожидания ответа от Telegram (15 секунд).' });
         });
-        req.setTimeout(10000); // 10 секунд
+        req.setTimeout(15000); // 15 секунд
         req.write(postData);
         req.end();
     });
@@ -194,20 +194,20 @@ async function sendMAX(botToken, chatId, text) {
                     }
                 } catch (e) {
                     console.error('MAX: ✗ не удалось распарсить ответ API');
-                    resolve({ ok: false, error: 'bad_response' });
+                    resolve({ ok: false, error: 'Не удалось разобрать ответ API MAX.' });
                 }
             });
         });
         req.on('error', function (e) {
             console.error('MAX: ✗ сетевая ошибка — ' + e.message);
-            resolve({ ok: false, error: e.message });
+            resolve({ ok: false, error: 'Сетевая ошибка при отправке сообщения в MAX.' });
         });
         req.on('timeout', function () {
             req.destroy();
             console.error('MAX: ✗ таймаут запроса');
-            resolve({ ok: false, error: 'timeout' });
+            resolve({ ok: false, error: 'Превышено время ожидания ответа от MAX (15 секунд).' });
         });
-        req.setTimeout(10000);
+        req.setTimeout(15000); // 15 секунд
         req.write(postData);
         req.end();
     });
@@ -222,6 +222,10 @@ async function sendWhatsApp(apiUrl, idInstance, apiTokenInstance, chatId, text) 
     if (!hasEnv(apiTokenInstance)) {
         console.log('WhatsApp: пропущено — не задан GREEN_API_TOKEN в .env');
         return { ok: false, reason: 'no_token' };
+    }
+    if (!hasEnv(chatId)) {
+        console.log('WhatsApp: пропущено — не задан WHATSAPP_CHAT_ID в .env');
+        return { ok: false, reason: 'no_chat_id' };
     }
     
     // Green-API использует формат chatId@c.us
@@ -254,24 +258,24 @@ async function sendWhatsApp(apiUrl, idInstance, apiTokenInstance, chatId, text) 
                         resolve({ ok: true });
                     } else {
                         console.error('WhatsApp: ✗ ошибка API — ' + data);
-                        resolve({ ok: false, error: 'bad_response' });
+                        resolve({ ok: false, error: 'WhatsApp вернул ошибку: сообщение не было отправлено.' });
                     }
                 } catch (e) {
                     console.error('WhatsApp: ✗ не удалось распарсить ответ API');
-                    resolve({ ok: false, error: 'bad_response' });
+                    resolve({ ok: false, error: 'Не удалось разобрать ответ API WhatsApp.' });
                 }
             });
         });
         req.on('error', function (e) {
             console.error('WhatsApp: ✗ сетевая ошибка — ' + e.message);
-            resolve({ ok: false, error: e.message });
+            resolve({ ok: false, error: 'Сетевая ошибка при отправке сообщения в WhatsApp.' });
         });
         req.on('timeout', function () {
             req.destroy();
             console.error('WhatsApp: ✗ таймаут запроса');
-            resolve({ ok: false, error: 'timeout' });
+            resolve({ ok: false, error: 'Превышено время ожидания ответа от WhatsApp (15 секунд).' });
         });
-        req.setTimeout(10000);
+        req.setTimeout(15000); // 15 секунд
         req.write(postData);
         req.end();
     });
@@ -345,5 +349,8 @@ module.exports = {
     getNotificationsConfig: getNotificationsConfig,
     notifyNewRequest: notifyNewRequest,
     formatMessage: formatMessage,
-    readConfig: readConfig
+    readConfig: readConfig,
+    sendTelegram: sendTelegram,
+    sendMAX: sendMAX,
+    sendWhatsApp: sendWhatsApp
 };

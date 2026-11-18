@@ -23,7 +23,7 @@ function safeEqual(a, b) {
 
 function createAuthManager(options) {
     const opts = options || {};
-    const adminPassword = String(opts.adminPassword || '');
+    let adminPassword = String(opts.adminPassword || '');
     const trustProxy = opts.trustProxy === true;
 
     const sessions = new Map(); // sessionId -> { id, createdAt, expiresAt }
@@ -181,6 +181,19 @@ function createAuthManager(options) {
         return adminPassword.trim().length > 0;
     }
 
+    // Проверяет пароль без создания сессии.
+    function verifyPassword(password) {
+        if (!isConfigured()) {
+            return false;
+        }
+        return safeEqual(String(password || ''), adminPassword);
+    }
+
+    // Обновляет пароль администратора в памяти.
+    function setPassword(newPassword) {
+        adminPassword = String(newPassword || '');
+    }
+
     // Проверяет пароль и при успехе создаёт сессию.
     // Возвращает { ok, sessionId?, status?, error?, retryAfter? }.
     function login(req, password) {
@@ -230,6 +243,8 @@ function createAuthManager(options) {
         checkSession: checkSession,
         login: login,
         logout: logout,
+        verifyPassword: verifyPassword,
+        setPassword: setPassword,
         getClientIp: getClientIp,
         getSessionId: getSessionId,
         parseCookies: parseCookies

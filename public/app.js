@@ -42,6 +42,7 @@
         el.result = document.getElementById('result');
         el.configError = document.getElementById('configError');
         el.companyName = document.getElementById('companyName');
+        el.companyLogo = document.getElementById('company-logo');
         el.pageTitle = document.getElementById('pageTitle');
         el.subtitle = document.getElementById('subtitle');
         el.headerPhone = document.getElementById('headerPhone');
@@ -56,6 +57,7 @@
 
         applyDemoFromUrl();
         loadConfig();
+        loadCompanyLogo();
     }
 
     // ---------- Настройки (config.json) ----------
@@ -108,6 +110,18 @@
     // Возвращает непустую строку или '' (значения не строкового типа игнорируются)
     function str(value) {
         return (typeof value === 'string') ? value.trim() : '';
+    }
+
+    // Логотип компании: показываем, только если сервер действительно отдал изображение
+    function loadCompanyLogo() {
+        var logo = el.companyLogo;
+        logo.onload = function () {
+            logo.style.display = 'inline-block';
+        };
+        logo.onerror = function () {
+            logo.style.display = 'none';
+        };
+        logo.src = '/api/logo?t=' + Date.now();
     }
 
     function isHttpsUrl(value) {
@@ -554,13 +568,15 @@
             return '';
         }
 
+        // 8 → 7; 9 или любая другая цифра (кроме 7) → добавляем 7 в начало
         if (digits[0] === '8') {
             digits = '7' + digits.slice(1);
-        } else if (digits[0] === '9') {
-            digits = '7' + digits;
         } else if (digits[0] !== '7') {
             digits = '7' + digits;
         }
+
+        // Ограничиваем длину 11 цифрами (максимум для российского номера)
+        digits = digits.slice(0, 11);
 
         var rest = digits.slice(1);
         var result = '+7';
@@ -585,10 +601,17 @@
         var value = el.contact.value;
         var caret = el.contact.selectionStart;
         var digitsBeforeCaret = extractDigits(value.slice(0, caret)).length;
+
+        var rawDigits = extractDigits(value);
+        // Если ввод начался не с 7 и не с 8, форматтер добавит ведущую 7 —
+        // учитываем её, чтобы курсор остался после тех же введённых цифр.
+        var addsLeadingSeven = Boolean(rawDigits && rawDigits[0] !== '7' && rawDigits[0] !== '8');
+
         var formatted = formatPhoneMask(value);
         el.contact.value = formatted;
 
-        var newCaret = findCaretForDigits(formatted, digitsBeforeCaret);
+        var targetDigits = digitsBeforeCaret + (addsLeadingSeven ? 1 : 0);
+        var newCaret = findCaretForDigits(formatted, targetDigits);
         el.contact.setSelectionRange(newCaret, newCaret);
     }
 

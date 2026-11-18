@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Кабинет менеджера</title>
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="/admin/index.css">
 </head>
 <body>
     <header class="site-header">
@@ -13,36 +13,149 @@
                 <span id="companyName" class="company-name">Менеджер</span>
                 <span class="page-title">Заявки</span>
             </div>
+            <nav class="admin-tabs" id="adminTabs" aria-label="Разделы кабинета">
+                <button type="button" class="admin-tab is-active" data-tab="requests">Заявки</button>
+                <button type="button" class="admin-tab" data-tab="clients">Заказчики</button>
+                <button type="button" class="admin-tab" data-tab="settings">Настройки</button>
+                <button type="button" class="admin-tab" data-tab="notifications">Уведомления</button>
+            </nav>
             <button type="button" id="logoutBtn" class="logout-btn">Выйти</button>
         </div>
     </header>
 
     <main class="container">
-        <div id="configError" class="notice notice-error" role="alert" hidden></div>
-        <div id="appError" class="notice notice-error" role="alert" hidden></div>
+        <section id="tabRequests" class="tab-content">
+            <div id="configError" class="notice notice-error" role="alert" hidden></div>
+            <div id="appError" class="notice notice-error" role="alert" hidden></div>
 
-        <section class="filters" aria-label="Фильтры заявок">
-            <div class="search-field">
-                <label for="searchInput">Поиск</label>
-                <input type="search" id="searchInput" placeholder="Имя или телефон" autocomplete="off">
-            </div>
+            <section class="filters" aria-label="Фильтры заявок">
+                <div class="search-field">
+                    <label for="searchInput">Поиск</label>
+                    <input type="search" id="searchInput" placeholder="Имя или телефон" autocomplete="off">
+                </div>
 
-            <div class="status-tabs" id="statusTabs" role="tablist" aria-label="Фильтр по статусу">
-                <button type="button" class="status-tab is-active" data-status="">Все</button>
-                <button type="button" class="status-tab" data-status="new">Новые</button>
-                <button type="button" class="status-tab" data-status="in_progress">В работе</button>
-                <button type="button" class="status-tab" data-status="done">Выполнены</button>
-                <button type="button" class="status-tab" data-status="cancelled">Отклонены</button>
+                <div class="status-tabs" id="statusTabs" role="tablist" aria-label="Фильтр по статусу">
+                    <button type="button" class="status-tab is-active" data-status="">Все</button>
+                    <button type="button" class="status-tab" data-status="new">Новые</button>
+                    <button type="button" class="status-tab" data-status="in_progress">В работе</button>
+                    <button type="button" class="status-tab" data-status="done">Выполнены</button>
+                    <button type="button" class="status-tab" data-status="cancelled">Отклонены</button>
+                </div>
+            </section>
+
+            <div id="summary" class="summary" hidden></div>
+            <div id="requestsList" class="requests-list" aria-live="polite"></div>
+            <div id="emptyState" class="empty-state" hidden>Заявок не найдено.</div>
+
+            <div class="pagination">
+                <button type="button" id="loadMoreBtn" class="load-more-btn" hidden>Показать ещё</button>
             </div>
         </section>
 
-        <div id="summary" class="summary" hidden></div>
-        <div id="requestsList" class="requests-list" aria-live="polite"></div>
-        <div id="emptyState" class="empty-state" hidden>Заявок не найдено.</div>
+        <section id="tabClients" class="tab-content" hidden>
+            <div class="search-field">
+                <label for="clientSearch">Поиск клиента</label>
+                <input type="search" id="clientSearch" placeholder="Имя или телефон" autocomplete="off">
+            </div>
+            <div id="clientsSummary" class="summary" hidden></div>
+            <div id="clientsList" class="clients-list"></div>
+            <div id="clientsEmpty" class="empty-state" hidden>Клиентов не найдено.</div>
+            <div class="pagination">
+                <button type="button" id="clientsLoadMore" class="load-more-btn" hidden>Показать ещё</button>
+            </div>
+            <button type="button" id="exportClientsCsv" class="export-btn">Экспорт клиентов CSV</button>
+        </section>
 
-        <div class="pagination">
-            <button type="button" id="loadMoreBtn" class="load-more-btn" hidden>Показать ещё</button>
-        </div>
+        <section id="tabSettings" class="tab-content" hidden>
+            <h2>Данные компании</h2>
+            <div class="settings-group">
+                <label>Название компании <input type="text" id="cfgCompanyName"></label>
+                <label>Заголовок <input type="text" id="cfgTitle"></label>
+                <label>Подзаголовок <textarea id="cfgSubtitle" rows="2"></textarea></label>
+            </div>
+
+            <h2>Фирменные цвета</h2>
+            <div class="settings-group colors-group">
+                <label>Основной <input type="color" id="cfgColorPrimary"> <input type="text" id="cfgColorPrimaryHex" maxlength="7" placeholder="#319795"></label>
+                <label>Акцент <input type="color" id="cfgColorAccent"> <input type="text" id="cfgColorAccentHex" maxlength="7" placeholder="#4fd1c5"></label>
+            </div>
+
+            <h2>Контакты</h2>
+            <div class="settings-group">
+                <label>Телефон <input type="tel" id="cfgPhone"></label>
+                <label>Telegram <input type="url" id="cfgTelegram" placeholder="https://t.me/..."></label>
+                <label>WhatsApp <input type="url" id="cfgWhatsapp" placeholder="https://wa.me/..."></label>
+                <label>MAX <input type="url" id="cfgMax" placeholder="https://max.ru/..."></label>
+            </div>
+
+            <h2>Логотип</h2>
+            <div class="settings-group">
+                <img id="cfgLogoPreview" src="" alt="Логотип" hidden>
+                <input type="file" id="cfgLogoFile" accept="image/jpeg,image/png,image/webp">
+                <button type="button" id="cfgLogoUpload">Загрузить</button>
+                <button type="button" id="cfgLogoDelete">Удалить</button>
+            </div>
+
+            <h2>Услуги</h2>
+            <div id="cfgServicesList" class="services-editor"></div>
+            <button type="button" id="cfgAddService" class="add-service-btn">+ Добавить услугу</button>
+
+            <div class="settings-actions">
+                <button type="button" id="cfgSaveBtn" class="save-btn">Сохранить настройки</button>
+                <span id="cfgSaveStatus"></span>
+            </div>
+        </section>
+
+        <section id="tabNotifications" class="tab-content" hidden>
+            <h2>Каналы уведомлений</h2>
+            <p class="settings-hint">Включённые каналы получают уведомления при каждой новой заявке. Токены и ключи API задаются в файле .env на сервере.</p>
+
+            <div class="channel-cards">
+                <div class="channel-card">
+                    <div class="channel-header">
+                        <span class="channel-icon">💬</span>
+                        <span class="channel-name">Telegram</span>
+                        <label class="toggle"><input type="checkbox" id="notifTelegram"><span class="toggle-slider"></span></label>
+                    </div>
+                    <button type="button" class="test-btn" id="testTelegram">Отправить тест</button>
+                    <span id="testTelegramStatus" class="test-status"></span>
+                </div>
+
+                <div class="channel-card">
+                    <div class="channel-header">
+                        <span class="channel-icon">💬</span>
+                        <span class="channel-name">MAX</span>
+                        <label class="toggle"><input type="checkbox" id="notifMax"><span class="toggle-slider"></span></label>
+                    </div>
+                    <button type="button" class="test-btn" id="testMax">Отправить тест</button>
+                    <span id="testMaxStatus" class="test-status"></span>
+                </div>
+
+                <div class="channel-card">
+                    <div class="channel-header">
+                        <span class="channel-icon">💬</span>
+                        <span class="channel-name">WhatsApp</span>
+                        <label class="toggle"><input type="checkbox" id="notifWhatsapp"><span class="toggle-slider"></span></label>
+                    </div>
+                    <button type="button" class="test-btn" id="testWhatsapp">Отправить тест</button>
+                    <span id="testWhatsappStatus" class="test-status"></span>
+                </div>
+            </div>
+
+            <button type="button" id="saveNotifBtn" class="save-btn">Сохранить настройки уведомлений</button>
+            <span id="saveNotifStatus"></span>
+
+            <hr>
+
+            <h2>Смена пароля</h2>
+            <div class="settings-group">
+                <label>Текущий пароль <input type="password" id="currentPassword" autocomplete="current-password"></label>
+                <label>Новый пароль <input type="password" id="newPassword" autocomplete="new-password"></label>
+                <label>Повтор нового пароля <input type="password" id="confirmPassword" autocomplete="new-password"></label>
+            </div>
+            <button type="button" id="changePasswordBtn" class="save-btn">Сменить пароль</button>
+            <span id="passwordStatus"></span>
+        </section>
     </main>
 
     <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Просмотр фото">
@@ -50,6 +163,6 @@
         <img id="lightboxImg" src="" alt="Фото заявки">
     </div>
 
-    <script src="index.js" defer></script>
+    <script src="/admin/index.js" defer></script>
 </body>
 </html>

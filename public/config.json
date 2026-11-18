@@ -7,24 +7,64 @@
     "accent": "#4fd1c5"
   },
   "contacts": {
-    "phone": "+7 900 000-00-00",
+    "phone": "+7 (924) 203-81-73",
     "telegram": "https://t.me/example_windows",
     "whatsapp": "https://wa.me/79000000000",
     "max": "https://max.ru/example"
   },
   "services": [
-    { "name": "Регулировка окна", "priceFrom": 800 },
-    { "name": "Замена уплотнителя", "priceFrom": 1200 },
-    { "name": "Замена ручки", "priceFrom": 600 },
-    { "name": "Ремонт фурнитуры", "priceFrom": 1500 },
-    { "name": "Замена стеклопакета", "priceFrom": 3500 },
-    { "name": "Москитная сетка", "priceFrom": 900 },
-    { "name": "Устранение продувания", "priceFrom": 1000 },
-    { "name": "Ремонт откосов", "priceFrom": 1800 },
-    { "name": "Установка подоконника", "priceFrom": 2200 },
-    { "name": "Замена створки", "priceFrom": 4200 },
-    { "name": "Монтаж отлива", "priceFrom": 1100 },
-    { "name": "Герметизация швов", "priceFrom": 700 }
+    {
+      "name": "Регулировка окна",
+      "priceFrom": 800
+    },
+    {
+      "name": "Замена уплотнителя",
+      "priceFrom": 1200
+    },
+    {
+      "name": "Замена ручки",
+      "priceFrom": 600
+    },
+    {
+      "name": "Ремонт фурнитуры",
+      "priceFrom": 1500
+    },
+    {
+      "name": "Замена стеклопакета",
+      "priceFrom": 3500
+    },
+    {
+      "name": "Москитная сетка",
+      "priceFrom": 900
+    },
+    {
+      "name": "Устранение продувания",
+      "priceFrom": 1000
+    },
+    {
+      "name": "Ремонт откосов",
+      "priceFrom": 1800
+    },
+    {
+      "name": "Установка подоконника",
+      "priceFrom": 2200
+    },
+    {
+      "name": "Замена створки",
+      "priceFrom": 4200
+    },
+    {
+      "name": "Монтаж отлива",
+      "priceFrom": 1100
+    },
+    {
+      "name": "Герметизация швов",
+      "priceFrom": 700
+    },
+    {
+      "name": "Замена ручки балкона",
+      "priceFrom": 700
+    }
   ],
   "notifications": {
     "telegram": true,
