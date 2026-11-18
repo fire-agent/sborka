@@ -77,7 +77,7 @@ function formatMessage(request) {
         var digits = request.phone.replace(/\D/g, '');
         if (digits) {
             lines.push('<a href="https://wa.me/' + digits + '">📱 Написать в WhatsApp</a>');
-            lines.push('<a href="https://t.me/+' + digits + '">✈️ Написать в Telegram</a>');
+            lines.push('✈️ Написать в Telegram: https://t.me/+' + digits);
             lines.push('<a href="https://max.ru/' + digits + '">💬 Написать в MAX</a>');
         }
     }
@@ -112,7 +112,8 @@ async function sendTelegram(botToken, chatId, text) {
     const postData = JSON.stringify({
         chat_id: chatId,
         text: text,
-        parse_mode: 'HTML'
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
     });
     
     return new Promise(function (resolve) {
