@@ -6,6 +6,7 @@
   "tagline": "Чистота — это просто!",
   "address": "г. Хабаровск, ул. Муравьёва-Амурского, 15",
   "workHours": "Ежедневно 8:00–21:00, без выходных",
+  "logoUrl": "/images/logo-cleaning.svg",
   "telegramUrl": "https://t.me/example_cleaning",
   "whatsappUrl": "https://wa.me/79242038175",
   "advantages": [

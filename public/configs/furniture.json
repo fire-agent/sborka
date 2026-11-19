@@ -6,6 +6,7 @@
   "tagline": "Ваша мебель как новая!",
   "address": "г. Хабаровск, ул. Ленина, 48",
   "workHours": "Пн-Сб 10:00–19:00, Вс — выходной",
+  "logoUrl": "/images/logo-furniture.svg",
   "telegramUrl": "https://t.me/example_furniture",
   "whatsappUrl": "https://wa.me/79242038174",
   "advantages": [

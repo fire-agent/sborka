@@ -422,18 +422,38 @@ function createRequestsHandler(options) {
         const channels = extractChannels(config);
 
         // 8. Текстовые поля и услуга
+        // Промо-форма покупки приложения передаёт purchase=1 и может указать только Telegram.
+        const purchaseRaw = fields.purchase !== undefined ? String(fields.purchase) : '';
+        const isPurchase = purchaseRaw === '1' || purchaseRaw === 'true' || purchaseRaw === 'yes';
+
         const name = cleanName(fields.name !== undefined ? fields.name : '');
         if (name.length > MAX_NAME_LENGTH) {
             respondError(res, 400, 'Имя слишком длинное.', 'name');
             return;
         }
 
-        const phoneRaw = cleanField(fields.phone !== undefined ? fields.phone : '');
-        if (!phoneRaw || !isRussianPhone(phoneRaw)) {
-            respondError(res, 400, 'Укажите российский телефон в формате +7 999 999-99-99', 'phone');
-            return;
+        let phone;
+        if (isPurchase) {
+            const phoneRaw = cleanField(fields.phone !== undefined ? fields.phone : '');
+            const telegramRaw = cleanField(fields.telegram !== undefined ? fields.telegram : '');
+            if (phoneRaw && isRussianPhone(phoneRaw)) {
+                phone = normalizePhone(phoneRaw);
+            } else if (telegramRaw) {
+                // Сохраняем Telegram-контакт вместо телефона. В строке без цифр
+                // notifier не построит ссылки wa.me/t.me, поэтому ничего не сломается.
+                phone = telegramRaw;
+            } else {
+                respondError(res, 400, 'Укажите телефон или Telegram для связи.', 'contact');
+                return;
+            }
+        } else {
+            const phoneRaw = cleanField(fields.phone !== undefined ? fields.phone : '');
+            if (!phoneRaw || !isRussianPhone(phoneRaw)) {
+                respondError(res, 400, 'Укажите российский телефон в формате +7 999 999-99-99', 'phone');
+                return;
+            }
+            phone = normalizePhone(phoneRaw);
         }
-        const phone = normalizePhone(phoneRaw);
 
         const description = cleanField(fields.description !== undefined ? fields.description : '');
         if (!description) {
@@ -447,7 +467,7 @@ function createRequestsHandler(options) {
 
         let service = '';
         let priceFrom = null;
-        if (services.length > 0) {
+        if (!isPurchase && services.length > 0) {
             const raw = fields.service !== undefined ? fields.service : null;
             const chosenNames = [];
 

@@ -6,6 +6,7 @@
   "tagline": "Вышел в окно и нет проблем!",
   "address": "г. Хабаровск, ул. Серышева, 25",
   "workHours": "Пн-Пт 9:00–18:00, Сб 10:00–15:00",
+  "logoUrl": "/images/logo-windows.svg",
   "telegramUrl": "https://t.me/example_windows",
   "whatsappUrl": "https://wa.me/79242038173",
   "advantages": [

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Готовое приложение для приёма заявок</title>
+    <link rel="preload" href="/fonts/manrope-cyr.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/manrope-lat.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/landing.css">
+</head>
+<body>
+    <header class="l-header">
+        <div class="l-container l-header-inner">
+            <div class="l-brand">
+                <span class="l-brand-mark" aria-hidden="true">◧</span>
+                <span id="brandName" class="l-brand-name">Приём заявок</span>
+            </div>
+            <nav class="l-niches" id="nicheSwitcher" aria-label="Переключение ниш">
+                <button type="button" class="l-niche-btn" data-niche="okna">Окна</button>
+                <button type="button" class="l-niche-btn" data-niche="mebel">Мебель</button>
+                <button type="button" class="l-niche-btn" data-niche="cleaning">Клининг</button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero -->
+        <section class="l-hero">
+            <div class="l-container l-hero-grid">
+                <div class="l-hero-copy">
+                    <h1 id="heroTitle" class="l-hero-title">Готовый сайт и мобильное приложение для приёма заявок</h1>
+                    <p id="heroSubtitle" class="l-hero-subtitle">Витрина с прайсом и приёмом фото-заявок в мессенджеры.</p>
+                    <div class="l-hero-actions">
+                        <a id="ctaOrder" class="l-btn l-btn-primary" href="#order">Подключить за 1 день</a>
+                        <a id="ctaDemo" class="l-btn l-btn-ghost" href="/okna" target="_blank" rel="noopener">Открыть живое демо ↗</a>
+                    </div>
+                </div>
+
+                <!-- Live phone mockup -->
+                <div class="l-mockup">
+                    <div class="l-mockup-tabs" role="tablist" aria-label="Режим демонстрации">
+                        <button type="button" class="l-mockup-tab is-active" role="tab" aria-selected="true" data-view="site">Сайт для клиентов</button>
+                        <button type="button" class="l-mockup-tab" role="tab" aria-selected="false" data-view="admin">Кабинет мастера (CRM и QR)</button>
+                    </div>
+                    <div class="l-phone">
+                        <div class="l-phone-notch" aria-hidden="true"></div>
+                        <div class="l-phone-screen">
+                            <iframe
+                                id="liveFrame"
+                                class="l-phone-frame"
+                                title="Живое демо витрины"
+                                src="/okna"
+                                loading="lazy"></iframe>
+                            <div id="adminCard" class="l-admin-card" hidden>
+                                <div class="l-admin-head">
+                                    <div>
+                                        <div class="l-admin-eyebrow">Кабинет мастера</div>
+                                        <div id="adminNicheName" class="l-admin-title">Окна</div>
+                                    </div>
+                                    <span class="l-admin-badge">● 3 новые</span>
+                                </div>
+                                <div class="l-admin-list">
+                                    <div class="l-admin-row">
+                                        <div class="l-admin-row-main">
+                                            <strong>Замена стеклопакета</strong>
+                                            <span>+7 924 203-81-73 · 12:40</span>
+                                        </div>
+                                        <span class="l-admin-tag">новая</span>
+                                    </div>
+                                    <div class="l-admin-row">
+                                        <div class="l-admin-row-main">
+                                            <strong>Ремонт фурнитуры</strong>
+                                            <span>+7 914 555-20-10 · 11:05</span>
+                                        </div>
+                                        <span class="l-admin-tag">новая</span>
+                                    </div>
+                                    <div class="l-admin-row">
+                                        <div class="l-admin-row-main">
+                                            <strong>Устранение продувания</strong>
+                                            <span>+7 924 888-31-44 · 09:18</span>
+                                        </div>
+                                        <span class="l-admin-tag is-done">в работе</span>
+                                    </div>
+                                </div>
+                                <div class="l-admin-discount">
+                                    <span>Скидка менеджера</span>
+                                    <strong id="adminDiscount">−10%</strong>
+                                </div>
+                                <div class="l-admin-qr">
+                                    <div class="l-admin-qr-box" aria-hidden="true">
+                                        <svg viewBox="0 0 100 100" role="img" aria-label="QR-код витрины">
+                                            <rect x="8" y="8" width="30" height="30" rx="3" fill="currentColor"/>
+                                            <rect x="12" y="12" width="8" height="8" fill="#fff"/>
+                                            <rect x="22" y="12" width="8" height="8" fill="#fff"/>
+                                            <rect x="12" y="22" width="8" height="8" fill="#fff"/>
+                                            <rect x="62" y="8" width="30" height="30" rx="3" fill="currentColor"/>
+                                            <rect x="66" y="12" width="8" height="8" fill="#fff"/>
+                                            <rect x="76" y="12" width="8" height="8" fill="#fff"/>
+                                            <rect x="66" y="22" width="8" height="8" fill="#fff"/>
+                                            <rect x="8" y="62" width="30" height="30" rx="3" fill="currentColor"/>
+                                            <rect x="12" y="66" width="8" height="8" fill="#fff"/>
+                                            <rect x="22" y="66" width="8" height="8" fill="#fff"/>
+                                            <rect x="12" y="76" width="8" height="8" fill="#fff"/>
+                                            <rect x="46" y="12" width="6" height="6" fill="currentColor"/>
+                                            <rect x="54" y="24" width="6" height="6" fill="currentColor"/>
+                                            <rect x="46" y="36" width="6" height="6" fill="currentColor"/>
+                                            <rect x="62" y="46" width="6" height="6" fill="currentColor"/>
+                                            <rect x="46" y="62" width="6" height="6" fill="currentColor"/>
+                                            <rect x="54" y="74" width="6" height="6" fill="currentColor"/>
+                                            <rect x="62" y="78" width="6" height="6" fill="currentColor"/>
+                                            <rect x="78" y="62" width="6" height="6" fill="currentColor"/>
+                                            <rect x="86" y="78" width="6" height="6" fill="currentColor"/>
+                                            <rect x="62" y="58" width="6" height="6" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                    <div class="l-admin-qr-copy">
+                                        <div class="l-admin-eyebrow">QR для визитки</div>
+                                        <p>Ведёт клиента прямо на витрину</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a id="openFull" class="l-mockup-open" href="/okna" target="_blank" rel="noopener">Открыть во весь экран ↗</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Benefits -->
+        <section class="l-section">
+            <div class="l-container">
+                <h2 class="l-section-title">Что входит в комплект</h2>
+                <div class="l-benefits" id="benefitsGrid"></div>
+            </div>
+        </section>
+
+        <!-- Tariffs -->
+        <section class="l-section l-section-alt">
+            <div class="l-container">
+                <h2 class="l-section-title">Тарифы</h2>
+                <div class="l-tariffs" id="tariffsGrid"></div>
+            </div>
+        </section>
+
+        <!-- Order form -->
+        <section class="l-section" id="order">
+            <div class="l-container l-order">
+                <div class="l-order-copy">
+                    <h2 class="l-section-title">Подключите за 1 день</h2>
+                    <p class="l-order-lead">Оставьте заявку — пришлём ссылку на вашу будущую витрину и запустим её под ключ.</p>
+                </div>
+                <form id="orderForm" class="l-form" novalidate>
+                    <div class="l-field">
+                        <label for="niche">Ниша</label>
+                        <select id="niche" name="niche"></select>
+                    </div>
+                    <div class="l-field">
+                        <label for="tariff">Тариф</label>
+                        <select id="tariff" name="tariff"></select>
+                    </div>
+                    <div class="l-field">
+                        <label for="name">Имя</label>
+                        <input type="text" id="name" name="name" autocomplete="name" placeholder="Как к вам обращаться?">
+                    </div>
+                    <div class="l-field">
+                        <label for="contact">Телефон или Telegram</label>
+                        <input type="text" id="contact" name="contact" inputmode="text" autocomplete="off" placeholder="+7 (999) 999-99-99 или @username">
+                        <span id="contactError" class="l-field-error"></span>
+                    </div>
+                    <button type="submit" id="submitBtn" class="l-btn l-btn-primary l-btn-block">Отправить заявку</button>
+                    <p class="l-form-note">Заявка прилетит менеджеру в Telegram.</p>
+                    <div id="formStatus" class="l-form-status" role="status" aria-live="polite"></div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="l-footer">
+        <div class="l-container">
+            <div class="l-footer-grid">
+                <div class="l-footer-req">
+                    <div class="l-brand">
+                        <span class="l-brand-mark" aria-hidden="true">◧</span>
+                        <span id="brandNameFooter" class="l-brand-name">Приём заявок</span>
+                    </div>
+                    <p id="sellerName" class="l-req-line">ИП Фамилия Имя Отчество</p>
+                    <p class="l-req-line">ИНН: <span id="sellerInn">000000000000</span></p>
+                    <p class="l-req-line">ОГРНИП: <span id="sellerOgrnip">000000000000000</span></p>
+                </div>
+                <div class="l-footer-contacts">
+                    <a id="sellerPhone" class="l-req-line l-req-link" href="tel:+70000000000">+7 000 000-00-00</a>
+                    <a id="sellerEmail" class="l-req-line l-req-link" href="mailto:sales@example.ru">sales@example.ru</a>
+                </div>
+                <div class="l-footer-legal">
+                    <button type="button" id="offerLink" class="l-legal-link">Публичная оферта</button>
+                    <button type="button" id="privacyLink" class="l-legal-link">Политика конфиденциальности</button>
+                </div>
+            </div>
+            <p class="l-footer-copy">Сайт носит информационный характер и не является публичной офертой.</p>
+        </div>
+    </footer>
+
+    <!-- Legal modal -->
+    <div id="legalModal" class="l-modal" hidden>
+        <div class="l-modal-backdrop" data-close></div>
+        <div class="l-modal-panel" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+            <div class="l-modal-head">
+                <h2 id="legalTitle" class="l-modal-title">Документ</h2>
+                <button type="button" id="legalClose" class="l-modal-close" aria-label="Закрыть">✕</button>
+            </div>
+            <div id="legalBody" class="l-modal-body"></div>
+        </div>
+    </div>
+
+    <script src="/landing.js" defer></script>
+</body>
+</html>

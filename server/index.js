@@ -88,7 +88,8 @@ const MIME_TYPES = {
 
 const SECURITY_HEADERS = {
     'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
+    // SAMEORIGIN (а не DENY), чтобы промо-лендинги могли показывать живые витрины /okna, /mebel, /cleaning в <iframe>
+    'X-Frame-Options': 'SAMEORIGIN',
     'Referrer-Policy': 'same-origin'
 };
 
@@ -509,7 +510,11 @@ function mergeConfig(current, input) {
         }) : [],
         notifications: (base.notifications && typeof base.notifications === 'object')
             ? Object.assign({}, base.notifications)
-            : { telegram: true, max: false, whatsapp: false }
+            : { telegram: true, max: false, whatsapp: false },
+        // Промо-лендинги: данные не редактируются из админки, но должны сохраняться при сохранении конфига
+        landing: (base.landing && typeof base.landing === 'object' && !Array.isArray(base.landing))
+            ? base.landing
+            : {}
     };
 
     if (input.companyName !== undefined) {
@@ -1450,6 +1455,17 @@ async function handleRequest(req, res) {
             return;
         }
         serveStatic(req, res, '/index.html');
+        return;
+    }
+
+    // ---------- Промо-лендинги ниш (слеш в конце уже убран выше) ----------
+
+    if (pathname === '/promo-okna' || pathname === '/promo-mebel' || pathname === '/promo-cleaning') {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+            sendText(res, 405, 'Метод не поддерживается');
+            return;
+        }
+        serveStatic(req, res, '/landing.html');
         return;
     }
 

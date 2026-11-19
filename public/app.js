@@ -75,7 +75,6 @@
 
         applyDemoFromUrl();
         loadConfig();
-        loadCompanyLogo();
     }
 
     // ---------- Настройки (config.json) ----------
@@ -141,8 +140,22 @@
     }
 
     // Логотип компании: показываем, только если сервер действительно отдал изображение
-    function loadCompanyLogo() {
+    function loadCompanyLogo(configLogoUrl) {
         var logo = el.companyLogo;
+        
+        // Если в конфиге задан безопасный путь логотипа (начинается с /images/), используем его
+        if (configLogoUrl && typeof configLogoUrl === 'string' && configLogoUrl.indexOf('/images/') === 0) {
+            logo.onload = function () {
+                logo.style.display = 'inline-block';
+            };
+            logo.onerror = function () {
+                logo.style.display = 'none';
+            };
+            logo.src = configLogoUrl;
+            return;
+        }
+        
+        // Иначе грузим из админки
         logo.onload = function () {
             logo.style.display = 'inline-block';
         };
@@ -950,6 +963,9 @@
                 showConfigError();
             }
         }
+        
+        // Загружаем логотип после применения конфига
+        loadCompanyLogo(config.logoUrl);
     }
 
     function applyWebsite(config) {
