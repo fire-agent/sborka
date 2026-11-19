@@ -1,4 +1,5 @@
 {
+  "theme": "glass",
   "companyName": "Оконных дел Мастер",
   "title": "Ремонт и регулировка окон",
   "subtitle": "Профессиональный ремонт окон в Хабаровске",
@@ -65,5 +66,6 @@
     "telegram": false,
     "max": false,
     "whatsapp": false
-  }
+  },
+  "heroImage": "/images/hero-windows.png"
 }

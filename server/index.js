@@ -1,7 +1,5 @@
-require('node:dns').setDefaultResultOrder('ipv4first');
-
-try { process.loadEnvFile(); } catch {}
 'use strict';
+require('node:dns').setDefaultResultOrder('ipv4first');
 
 // Простой сервер без сторонних библиотек: только встроенные модули Node.js.
 
@@ -84,7 +82,8 @@ const MIME_TYPES = {
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.webp': 'image/webp',
-    '.ico': 'image/x-icon'
+    '.ico': 'image/x-icon',
+    '.woff2': 'font/woff2'
 };
 
 const SECURITY_HEADERS = {
@@ -187,9 +186,14 @@ function sendJsonExtra(res, status, data, extraHeaders) {
     res.end(JSON.stringify(data));
 }
 
-function setAdminCookie(res, sessionId, maxAgeSeconds) {
-    res.setHeader('Set-Cookie', auth.COOKIE_NAME + '=' + encodeURIComponent(sessionId) +
-        '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + maxAgeSeconds);
+function setAdminCookie(req, res, sessionId, maxAgeSeconds) {
+    const isHttps = req.headers['x-forwarded-proto'] === 'https';
+    let cookie = auth.COOKIE_NAME + '=' + encodeURIComponent(sessionId) +
+        '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + maxAgeSeconds;
+    if (isHttps) {
+        cookie += '; Secure';
+    }
+    res.setHeader('Set-Cookie', cookie);
 }
 
 function clearAdminCookie(res) {
@@ -469,27 +473,7 @@ function readConfigFile() {
 
 // Обновляет строку ADMIN_PASSWORD в файле .env, не трогая остальные значения.
 function updateEnvPassword(newPassword) {
-    const envPath = path.join(ROOT_DIR, '.env');
-    let content = '';
-    if (fs.existsSync(envPath)) {
-        content = fs.readFileSync(envPath, 'utf8');
-    }
-    const lines = content.split(/\r?\n/);
-    let replaced = false;
-    for (let i = 0; i < lines.length; i++) {
-        if (/^\s*ADMIN_PASSWORD\s*=/.test(lines[i])) {
-            lines[i] = 'ADMIN_PASSWORD=' + newPassword;
-            replaced = true;
-            break;
-        }
-    }
-    if (!replaced) {
-        if (content && !/\n$/.test(content)) {
-            lines.push('');
-        }
-        lines.push('ADMIN_PASSWORD=' + newPassword);
-    }
-    fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf8');
+    updateEnvValue('ADMIN_PASSWORD', newPassword);
 }
 
 // Смерживает валидированные поля из input с текущим конфигом.
@@ -505,6 +489,7 @@ function mergeConfig(current, input) {
         workHours: base.workHours || '',
         telegramUrl: base.telegramUrl || '',
         whatsappUrl: base.whatsappUrl || '',
+        theme: base.theme || '',
         advantages: base.advantages || [],
         colors: {
             primary: (base.colors && base.colors.primary) || '#319795',
@@ -551,23 +536,37 @@ function mergeConfig(current, input) {
     if (input.whatsappUrl !== undefined) {
         out.whatsappUrl = cleanConfigUrl(input.whatsappUrl, 'WhatsApp URL');
     }
+    if (input.theme !== undefined) {
+        const theme = cleanConfigString(input.theme, 'Тема', 20, true);
+        if (['', 'glass', 'bold', 'app'].indexOf(theme) === -1) {
+            throw new Error('Недопустимое значение для темы');
+        }
+        out.theme = theme;
+    }
     if (input.advantages !== undefined) {
         if (!Array.isArray(input.advantages)) {
             throw new Error('Преимущества должны быть массивом');
         }
-        if (input.advantages.length !== 3) {
-            throw new Error('Должно быть ровно 3 преимущества');
-        }
-        out.advantages = input.advantages.map(function (a, i) {
-            const label = 'Преимущество №' + (i + 1);
+        const cleanedAdvantages = input.advantages.map(function (a, i) {
             if (!a || typeof a !== 'object' || Array.isArray(a)) {
-                throw new Error(label + ' заполнено неверно');
+                return null;
             }
+            const title = (a.title && typeof a.title === 'string') ? a.title.trim() : '';
+            const text = (a.text && typeof a.text === 'string') ? a.text.trim() : '';
+            if (title === '' && text === '') {
+                return null;
+            }
+            const label = 'Преимущество №' + (i + 1);
             return {
-                title: cleanConfigString(a.title, label + ': заголовок', 100, false),
-                text: cleanConfigString(a.text, label + ': описание', 200, false)
+                title: cleanConfigString(title, label + ': заголовок', 100, false),
+                text: cleanConfigString(text, label + ': описание', 200, false)
             };
-        });
+        }).filter(Boolean);
+
+        if (cleanedAdvantages.length > 3) {
+            throw new Error('Можно указать не более 3 преимуществ');
+        }
+        out.advantages = cleanedAdvantages;
     }
 
     if (input.colors && typeof input.colors === 'object' && !Array.isArray(input.colors)) {
@@ -664,33 +663,22 @@ function cleanupExpiredCodes() {
 // Записывает {CHANNEL}_CHAT_ID в файл .env, не трогая остальные значения
 function updateEnvChatId(channel, chatId) {
     const envKey = (channel === 'telegram' ? 'TELEGRAM' : 'MAX') + '_CHAT_ID';
-    const envPath = path.join(ROOT_DIR, '.env');
-    let content = '';
-    if (fs.existsSync(envPath)) {
-        content = fs.readFileSync(envPath, 'utf8');
+    updateEnvValue(envKey, chatId);
+}
+
+// Экранирует значение для .env
+function sanitizeEnvValue(value) {
+    const s = String(value).replace(/[\r\n]+/g, '');
+    if (s.indexOf('#') !== -1 && !/^\s*".*"/.test(s)) {
+        return '"' + s.replace(/"/g, '\\"') + '"';
     }
-    const lines = content.split(/\r?\n/);
-    let replaced = false;
-    const pattern = new RegExp('^\\s*' + envKey + '\\s*=');
-    for (let i = 0; i < lines.length; i++) {
-        if (pattern.test(lines[i])) {
-            lines[i] = envKey + '=' + chatId;
-            replaced = true;
-            break;
-        }
-    }
-    if (!replaced) {
-        if (content && !/\n$/.test(content)) {
-            lines.push('');
-        }
-        lines.push(envKey + '=' + chatId);
-    }
-    fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf8');
+    return s;
 }
 
 // Записывает произвольное значение в файл .env (если файла нет — создаёт)
 function updateEnvValue(key, value) {
     const envPath = path.join(ROOT_DIR, '.env');
+    const safeValue = sanitizeEnvValue(value);
     let content = '';
     if (fs.existsSync(envPath)) {
         content = fs.readFileSync(envPath, 'utf8');
@@ -700,7 +688,7 @@ function updateEnvValue(key, value) {
     const pattern = new RegExp('^\\s*' + key + '\\s*=');
     for (let i = 0; i < lines.length; i++) {
         if (pattern.test(lines[i])) {
-            lines[i] = key + '=' + value;
+            lines[i] = key + '=' + safeValue;
             replaced = true;
             break;
         }
@@ -709,7 +697,7 @@ function updateEnvValue(key, value) {
         if (content && !/\n$/.test(content)) {
             lines.push('');
         }
-        lines.push(key + '=' + value);
+        lines.push(key + '=' + safeValue);
     }
     fs.writeFileSync(envPath, lines.join('\n') + '\n', 'utf8');
 }
@@ -828,6 +816,11 @@ async function handleRequest(req, res) {
         return;
     }
 
+    // Убираем конечный слеш для единообразия
+    if (pathname.length > 1 && pathname.endsWith('/')) {
+        pathname = pathname.slice(0, -1);
+    }
+
     if (pathname === '/api/health') {
         sendJson(res, 200, { ok: true });
         return;
@@ -857,7 +850,7 @@ async function handleRequest(req, res) {
             sendJsonExtra(res, result.status, { ok: false, error: result.error }, extra);
             return;
         }
-        setAdminCookie(res, result.sessionId, auth.SESSION_MAX_AGE_SECONDS);
+        setAdminCookie(req, res, result.sessionId, auth.SESSION_MAX_AGE_SECONDS);
         sendJson(res, 200, { ok: true });
         return;
     }
@@ -1124,11 +1117,12 @@ async function handleRequest(req, res) {
             enableNotificationChannel(item.channel);
             pendingDeepLinks.delete(code);
 
-            if (item.channel === 'telegram') {
-                sendTelegram(botToken, chatId, '✓ Канал подключён');
-            } else {
-                sendMAX(botToken, chatId, '✓ Канал подключён');
-            }
+            const promise = (item.channel === 'telegram')
+                ? sendTelegram(botToken, chatId, '✓ Канал подключён')
+                : sendMAX(botToken, chatId, '✓ Канал подключён');
+            promise.catch(function (e) {
+                console.error('Deep Link: не удалось отправить сообщение о подключении — ' + e.message);
+            });
         } catch (e) {
             console.error('Deep Link: ошибка при подключении канала — ' + e.message);
             sendJson(res, 500, { ok: false, error: 'Не удалось завершить подключение канала.' });

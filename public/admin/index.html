@@ -94,6 +94,18 @@
                 <label>Акцент <input type="color" id="cfgColorAccent"> <input type="text" id="cfgColorAccentHex" maxlength="7" placeholder="#4fd1c5"></label>
             </div>
 
+            <h2>Тема оформления</h2>
+            <div class="settings-group">
+                <label>Тема
+                    <select id="cfgTheme">
+                        <option value="">Стандартная</option>
+                        <option value="glass">Стекло (Glass)</option>
+                        <option value="bold">Яркая (Bold)</option>
+                        <option value="app">Приложение (App)</option>
+                    </select>
+                </label>
+            </div>
+
             <h2>Контакты</h2>
             <div class="settings-group">
                 <label>Телефон <input type="tel" id="cfgPhone"></label>
@@ -104,7 +116,7 @@
 
             <h2>Преимущества (3 карточки)</h2>
             <div id="cfgAdvantagesList" class="advantages-editor"></div>
-            <button type="button" id="cfgAddAdvantage" class="add-advantage-btn">+ Добавить преимущество</button>
+            <button type="button" id="cfgAddAdvantage" class="add-advantage-btn" hidden>+ Добавить преимущество</button>
 
             <h2>QR-код для визиток и типографии</h2>
             <div class="qr-generator">

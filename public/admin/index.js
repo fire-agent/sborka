@@ -84,6 +84,7 @@
         el.cfgWorkHours = document.getElementById('cfgWorkHours');
         el.cfgAdvantagesList = document.getElementById('cfgAdvantagesList');
         el.cfgAddAdvantage = document.getElementById('cfgAddAdvantage');
+        el.cfgTheme = document.getElementById('cfgTheme');
         el.qrImage = document.getElementById('qrImage');
         el.generateQrBtn = document.getElementById('generateQrBtn');
         el.downloadPng = document.getElementById('downloadPng');
@@ -849,6 +850,10 @@
 
     function csvCell(value) {
         var s = String(value === null || value === undefined ? '' : value);
+        // Экранирование для предотвращения CSV Injection
+        if (/^[=\+\-@'"]/.test(s)) {
+            s = "'" + s;
+        }
         return '"' + s.replace(/"/g, '""') + '"';
     }
 
@@ -1397,6 +1402,7 @@
         renderAdvantageRows(cfg.advantages || []);
         renderServiceRows(cfg.services || []);
         updateLogoPreview();
+        el.cfgTheme.value = cfg.theme || '';
     }
 
     function renderAdvantageRows(advantages) {
@@ -1405,12 +1411,15 @@
         list.slice(0, 3).forEach(function (adv) {
             addAdvantageRow(adv);
         });
-        for (var i = list.length; i < 3; i++) {
-            addAdvantageRow(null);
-        }
+        updateAdvantageButton();
     }
 
     function addAdvantageRow(advantage) {
+        var advantageCount = el.cfgAdvantagesList.querySelectorAll('.advantage-row').length;
+        if (advantageCount >= 3) {
+            return;
+        }
+
         var row = document.createElement('div');
         row.className = 'advantage-row';
 
@@ -1432,12 +1441,19 @@
         removeBtn.textContent = 'Удалить';
         removeBtn.addEventListener('click', function () {
             row.remove();
+            updateAdvantageButton();
         });
 
         row.appendChild(titleInput);
         row.appendChild(textInput);
         row.appendChild(removeBtn);
         el.cfgAdvantagesList.appendChild(row);
+        updateAdvantageButton();
+    }
+
+    function updateAdvantageButton() {
+        var advantageCount = el.cfgAdvantagesList.querySelectorAll('.advantage-row').length;
+        el.cfgAddAdvantage.hidden = (advantageCount >= 3);
     }
 
     function getAdvantagesFromForm() {
@@ -1452,10 +1468,7 @@
                 result.push({ title: title, text: text });
             }
         }
-        while (result.length < 3) {
-            result.push({ title: '', text: '' });
-        }
-        return result.slice(0, 3);
+        return result;
     }
 
     function normalizeHexForColorInput(value) {
@@ -1633,7 +1646,7 @@
         var payload = {
             companyName: el.cfgCompanyName.value,
             title: el.cfgTitle.value,
-            subtitle: '',
+            theme: el.cfgTheme.value,
             tagline: el.cfgTagline.value,
             address: el.cfgAddress.value,
             workHours: el.cfgWorkHours.value,
@@ -1641,6 +1654,8 @@
                 primary: el.cfgColorPrimaryHex.value,
                 accent: el.cfgColorAccentHex.value
             },
+            telegramUrl: el.cfgTelegram.value,
+            whatsappUrl: el.cfgWhatsapp.value,
             contacts: {
                 phone: el.cfgPhone.value,
                 telegram: el.cfgTelegram.value,
@@ -1682,7 +1697,7 @@
                 }, 2000);
                 
                 showSettingsStatus('✓ Настройки успешно сохранены!', true);
-                showToast('Настройки успешно сохранены!');
+                showToast('✓ Настройки успешно сохранены!', true);
                 loadConfig();
             })
             .catch(function () {
@@ -1880,7 +1895,13 @@
 
                 var code = result.data.code;
                 var deepLink = result.data.deepLink;
-                window.open(deepLink, '_blank');
+                // Сначала открываем окно, потом делаем fetch, чтобы не блокировалось в Safari
+                var botWindow = window.open('', '_blank');
+                if (botWindow) {
+                    botWindow.location.href = deepLink;
+                } else {
+                    window.location.href = deepLink;
+                }
                 setDeeplinkStatus(channel, 'Откройте бота и нажмите START…', false);
 
                 pollDeepLink(channel, code, Date.now());

@@ -89,5 +89,6 @@
     "telegram": true,
     "max": false,
     "whatsapp": false
-  }
+  },
+  "heroImage": "/images/hero-windows.png"
 }

@@ -39,14 +39,31 @@ body {
     gap: 12px;
 }
 
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.header-contacts {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .company-name {
     font-size: 18px;
     font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 #company-logo {
     max-height: 44px;
-    max-width: 160px;
+    max-width: 110px;
     object-fit: contain;
     border-radius: 6px;
 }
@@ -76,7 +93,7 @@ body {
 }
 
 .messaging-btn.telegram-icon {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168 9.007-3.343 9.699-6.258 9.759-2.616.057-5.142-.634-7.093-1.873-2.363-1.526-3.659-3.787-3.737-6.294-.06-2.072.603-3.868 1.743-5.198 1.433-1.656 3.454-2.733 5.675-2.927l.686-.055.047.283c.233 1.393.986 2.607 2.053 3.475.607.508 1.268.927 1.967 1.253l.215.093.063-.318c.457-2.284 1.469-4.735 2.114-6.016.274-.547.661-1.046 1.121-1.46.265-.25.524-.446.763-.58.215-.12.436-.194.655-.224.206-.029.412.01.611.112.194.099.371.275.516.51.136.225.232.496.275.798.046.317.02.636-.074.941-.14.448-.425.837-.82 1.114-1.01.743-2.373 1.16-3.824 1.182l-.256.003-.173.104c-1.316.785-2.357 2.134-2.872 3.743-.266.818-.327 1.675-.184 2.51.113.678.447 1.287.96 1.725.73.633 1.737.944 2.81.835 1.762-.176 3.502-1.263 4.758-2.953 1.002-1.348 1.551-3.08 1.546-4.948-.004-1.615-.46-3.071-1.313-4.24-.774-1.044-1.917-1.775-3.209-2.072-.435-.103-.873-.142-1.304-.12-.423.022-.841.12-1.237.294-.384.17-.743.416-1.068.731-.314.306-.588.672-.814 1.091-.216.399-.376.856-.476 1.362-.096.487-.095.985.002 1.466.103.508.318.966.624 1.335.264.326.603.572.989.724.415.169.867.225 1.308.164.433-.061.852-.26 1.217-.581l.125-.113z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z'/%3E%3C/svg%3E");
 }
 
 .messaging-btn.whatsapp-icon {
@@ -171,7 +188,7 @@ h1 {
 
 .advantages-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 16px;
     margin-top: 16px;
 }
@@ -471,4 +488,58 @@ input[type="file"] {
     font-size: 14px;
     color: #555;
     margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+    .container, .site-header-inner {
+        max-width: 1040px;
+    }
+
+    .hero {
+        min-height: 280px;
+        padding: 40px 44px;
+        display: flex;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .hero-inner {
+        max-width: 560px;
+        margin-left: 0;
+        margin-right: auto;
+    }
+
+    .hero h1 {
+        font-size: 40px;
+        line-height: 1.15;
+        margin-bottom: 12px;
+    }
+
+    .hero p, #heroTagline {
+        font-size: 18px;
+        line-height: 1.45;
+        margin-bottom: 24px;
+    }
+
+    .hero .cta-btn, .hero .cta-button {
+        padding: 15px 30px;
+        font-size: 16px;
+    }
+}
+
+html.is-loading body {
+    visibility: hidden;
+    animation: page-reveal 0s 3s forwards;
+}
+
+@keyframes page-reveal {
+    to {
+        visibility: visible;
+    }
+}
+
+@media (max-width: 360px) {
+    .advantages-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }

@@ -1,4 +1,5 @@
 {
+  "theme": "app",
   "companyName": "Чистый Дом",
   "title": "Клининг и химчистка",
   "subtitle": "Профессиональная уборка любой сложности",
@@ -22,8 +23,8 @@
     }
   ],
   "colors": {
-    "primary": "#0d9488",
-    "accent": "#14b8a6"
+    "primary": "#1f9d55",
+    "accent": "#38c172"
   },
   "contacts": {
     "phone": "+7 (924) 203-81-75",
@@ -65,5 +66,6 @@
     "telegram": false,
     "max": false,
     "whatsapp": false
-  }
+  },
+  "heroImage": "/images/hero-cleaning.png"
 }

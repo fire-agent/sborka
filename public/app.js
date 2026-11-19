@@ -10,6 +10,7 @@
     var CONFIG_ERROR_TEXT = 'Не удалось загрузить настройки (config.json). ' +
         'Если вы открыли файл двойным щелчком — запустите проверку по инструкции в README.';
     var COLOR_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+    var THEMES = ['glass', 'bold', 'app'];
 
     var photos = [];
     var photoUrls = [];
@@ -57,6 +58,8 @@
         el.heroTagline = document.getElementById('heroTagline');
         el.ctaButton = document.getElementById('ctaButton');
         el.advantagesGrid = document.getElementById('advantagesGrid');
+        el.advantagesSection = document.querySelector('.advantages-section');
+        el.heroSection = document.querySelector('.hero');
         el.footerAddress = document.getElementById('footerAddress');
         el.footerHours = document.getElementById('footerHours');
         el.headerMessaging = document.getElementById('headerMessaging');
@@ -121,6 +124,9 @@
             })
             .catch(function () {
                 showConfigError();
+            })
+            .then(function () {
+                document.documentElement.classList.remove('is-loading');
             });
     }
 
@@ -146,20 +152,8 @@
         logo.src = '/api/logo?t=' + Date.now();
     }
 
-    function isHttpsUrl(value) {
-        return typeof value === 'string' && value.indexOf('https://') === 0;
-    }
-
-    function applyConfig(config) {
-        // applyConfig сам не должен ломать страницу: каждую часть применяем отдельно
-        var steps = [applyTexts, applyColors, applyContacts, applyServices];
-        for (var i = 0; i < steps.length; i++) {
-            try {
-                steps[i](config);
-            } catch (e) {
-                showConfigError();
-            }
-        }
+    function isSafeUrl(value) {
+        return typeof value === 'string' && (value.indexOf('https://') === 0 || value.indexOf('http://') === 0);
     }
 
     function applyTexts(config) {
@@ -184,6 +178,9 @@
         }
         if (typeof colors.accent === 'string' && COLOR_RE.test(colors.accent.trim())) {
             root.style.setProperty('--accent', colors.accent.trim());
+        }
+        if (THEMES.indexOf(config.theme) !== -1) {
+            root.setAttribute('data-theme', config.theme);
         }
     }
 
@@ -215,7 +212,7 @@
 
         for (var i = 0; i < messengers.length; i++) {
             var link = str(contacts[messengers[i].key]);
-            if (link && isHttpsUrl(link)) {
+            if (link && isSafeUrl(link)) {
                 el.footerContacts.appendChild(createLink(link, messengers[i].label, true));
                 footerCount++;
             }
@@ -898,29 +895,38 @@
     // ---------- Витрина сайта (website) ----------
 
     function renderAdvantages() {
-        el.advantagesGrid.innerHTML = '';
+        el.advantagesGrid.textContent = '';
         advantages.forEach(function (adv) {
             var card = document.createElement('div');
             card.className = 'advantage-card';
-            card.innerHTML = '<h3>' + escapeHtml(adv.title) + '</h3><p>' + escapeHtml(adv.text) + '</p>';
+            var h3 = document.createElement('h3');
+            h3.textContent = str(adv && adv.title);
+            var p = document.createElement('p');
+            p.textContent = str(adv && adv.text);
+            card.appendChild(h3);
+            card.appendChild(p);
             el.advantagesGrid.appendChild(card);
         });
-        el.advantagesGrid.hidden = advantages.length === 0;
+        el.advantagesSection.hidden = advantages.length === 0;
     }
 
     function updateHeaderMessaging() {
-        var hasTelegram = telegramUrl && telegramUrl.trim() !== '';
-        var hasWhatsApp = whatsappUrl && whatsappUrl.trim() !== '';
+        var hasTelegram = isSafeUrl(telegramUrl);
+        var hasWhatsApp = isSafeUrl(whatsappUrl);
 
         el.headerMessaging.hidden = !hasTelegram && !hasWhatsApp;
 
+        var tgBtn = el.headerMessaging.querySelector('.telegram-icon');
+        var waBtn = el.headerMessaging.querySelector('.whatsapp-icon');
+
+        tgBtn.hidden = true;
+        waBtn.hidden = true;
+
         if (hasTelegram) {
-            var tgBtn = el.headerMessaging.querySelector('.telegram-icon');
             tgBtn.href = telegramUrl;
             tgBtn.hidden = false;
         }
         if (hasWhatsApp) {
-            var waBtn = el.headerMessaging.querySelector('.whatsapp-icon');
             waBtn.href = whatsappUrl;
             waBtn.hidden = false;
         }
@@ -932,16 +938,6 @@
             firstField.scrollIntoView({ behavior: 'smooth', block: 'start' });
             firstField.focus();
         }
-    }
-
-    function escapeHtml(value) {
-        if (typeof value !== 'string') return '';
-        return value
-            .replace(/&/g, '&')
-            .replace(/</g, '<')
-            .replace(/>/g, '>')
-            .replace(/"/g, '"')
-            .replace(/'/g, '&#039;');
     }
 
     function applyConfig(config) {
@@ -959,8 +955,9 @@
     function applyWebsite(config) {
         address = str(config.address);
         workHours = str(config.workHours);
-        telegramUrl = str(config.telegramUrl);
-        whatsappUrl = str(config.whatsappUrl);
+        var contacts = (config.contacts && typeof config.contacts === 'object') ? config.contacts : {};
+        telegramUrl = str(config.telegramUrl) || str(contacts.telegram);
+        whatsappUrl = str(config.whatsappUrl) || str(contacts.whatsapp);
         advantages = Array.isArray(config.advantages) ? config.advantages.slice(0, 3) : [];
 
         // Обновление Hero
@@ -970,6 +967,11 @@
         }
         if (config.tagline) {
             el.heroTagline.textContent = config.tagline;
+        }
+ 
+        if (config.heroImage) {
+            el.heroSection.classList.add('has-hero-image');
+            el.heroSection.style.setProperty('--hero-bg', 'url("' + config.heroImage + '")');
         }
 
         // Advantages

@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="is-loading">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTabTitle">Ремонт мебели — заявка мастеру</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/styles.css?v=4">
+    <link rel="stylesheet" href="/theme.css?v=4">
 </head>
 <body>
     <header class="site-header">
         <div class="site-header-inner">
-            <img id="company-logo" alt="Логотип" style="display: none;">
-            <span id="companyName" class="company-name">Мастер</span>
-            <a id="headerPhone" class="header-phone" href="#" hidden></a>
-            <div class="messaging" id="headerMessaging" hidden>
-                <a href="#" class="messaging-btn telegram-icon" title="Telegram" hidden></a>
-                <a href="#" class="messaging-btn whatsapp-icon" title="WhatsApp" hidden></a>
+            <div class="brand">
+               <img id="company-logo" alt="Логотип" style="display: none;">
+               <span id="companyName" class="company-name">Мастер</span>
+            </div>
+            <div class="header-contacts">
+               <a id="headerPhone" class="header-phone" href="#" hidden></a>
+               <div class="messaging" id="headerMessaging" hidden>
+                   <a href="#" class="messaging-btn telegram-icon" title="Telegram" hidden></a>
+                   <a href="#" class="messaging-btn whatsapp-icon" title="WhatsApp" hidden></a>
+               </div>
             </div>
         </div>
     </header>
@@ -78,7 +83,7 @@
 
         <div class="field checkbox-field">
             <label class="checkbox-label">
-                <input type="checkbox" id="agreement" checked required>
+                <input type="checkbox" id="agreement" required>
                 <span>Согласен на <a href="privacy.html" target="_blank" rel="noopener">обработку персональных данных</a></span>
             </label>
         </div>
@@ -99,6 +104,6 @@
             <p class="disclaimer">Нажимая «Отправить заявку», вы соглашаетесь с политикой обработки персональных данных.</p>
         </footer>
     </div>
-    <script src="app.js" defer></script>
+    <script src="/app.js?v=3" defer></script>
 </body>
 </html>
