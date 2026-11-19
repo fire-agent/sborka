@@ -5,8 +5,8 @@
   "tagline": "Вернём окнам герметичность и плавный ход уже сегодн",
   "address": "Хабаровск",
   "workHours": "Пн-Пт 9:00–18:00, Сб 10:00–15:00",
-  "telegramUrl": "https://t.me/example_windows",
-  "whatsappUrl": "https://wa.me/79000000000",
+  "telegramUrl": "https://t.me",
+  "whatsappUrl": "https://wa.me",
   "theme": "",
   "advantages": [
     {
@@ -27,9 +27,9 @@
     "accent": "#4fd1c5"
   },
   "contacts": {
-    "phone": "+7 (924) 107-88-99",
-    "telegram": "https://t.me/example_windows",
-    "whatsapp": "https://wa.me/79000000000",
+    "phone": "+7 (900) 000-00-00",
+    "telegram": "https://t.me",
+    "whatsapp": "https://wa.me",
     "max": "https://max.ru/example"
   },
   "services": [

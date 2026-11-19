@@ -7,8 +7,8 @@
   "address": "г. Хабаровск, ул. Муравьёва-Амурского, 15",
   "workHours": "Ежедневно 8:00–21:00, без выходных",
   "logoUrl": "/images/logo-cleaning.svg",
-  "telegramUrl": "https://t.me/example_cleaning",
-  "whatsappUrl": "https://wa.me/79242038175",
+  "telegramUrl": "https://t.me",
+  "whatsappUrl": "https://wa.me",
   "advantages": [
     {
       "title": "💚 Эко-средства",
@@ -28,9 +28,9 @@
     "accent": "#38c172"
   },
   "contacts": {
-    "phone": "+7 (924) 203-81-75",
-    "telegram": "https://t.me/example_cleaning",
-    "whatsapp": "https://wa.me/79242038175",
+    "phone": "+7 (900) 000-00-00",
+    "telegram": "https://t.me",
+    "whatsapp": "https://wa.me",
     "max": "https://max.ru/example_cleaning"
   },
   "services": [

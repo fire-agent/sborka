@@ -7,8 +7,8 @@
   "address": "г. Хабаровск, ул. Серышева, 25",
   "workHours": "Пн-Пт 9:00–18:00, Сб 10:00–15:00",
   "logoUrl": "/images/logo-windows.svg",
-  "telegramUrl": "https://t.me/example_windows",
-  "whatsappUrl": "https://wa.me/79242038173",
+  "telegramUrl": "https://t.me",
+  "whatsappUrl": "https://wa.me",
   "advantages": [
     {
       "title": "⚡ Быстрый выезд",
@@ -28,9 +28,9 @@
     "accent": "#3b82f6"
   },
   "contacts": {
-    "phone": "+7 (924) 203-81-73",
-    "telegram": "https://t.me/example_windows",
-    "whatsapp": "https://wa.me/79242038173",
+    "phone": "+7 (900) 000-00-00",
+    "telegram": "https://t.me",
+    "whatsapp": "https://wa.me",
     "max": "https://max.ru/example"
   },
   "services": [

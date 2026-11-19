@@ -7,8 +7,8 @@
   "address": "г. Хабаровск, ул. Ленина, 48",
   "workHours": "Пн-Сб 10:00–19:00, Вс — выходной",
   "logoUrl": "/images/logo-furniture.svg",
-  "telegramUrl": "https://t.me/example_furniture",
-  "whatsappUrl": "https://wa.me/79242038174",
+  "telegramUrl": "https://t.me",
+  "whatsappUrl": "https://wa.me",
   "advantages": [
     {
       "title": "🎨 Огромный выбор тканей",
@@ -28,9 +28,9 @@
     "accent": "#f59e0b"
   },
   "contacts": {
-    "phone": "+7 (924) 203-81-74",
-    "telegram": "https://t.me/example_furniture",
-    "whatsapp": "https://wa.me/79242038174",
+    "phone": "+7 (900) 000-00-00",
+    "telegram": "https://t.me",
+    "whatsapp": "https://wa.me",
     "max": "https://max.ru/example_furniture"
   },
   "services": [
